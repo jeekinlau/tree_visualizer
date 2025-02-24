@@ -91,13 +91,22 @@
     h4 {
       margin-bottom: 5px;
     }
-    #location_btn {
+    #location_btn, #track_location_btn {
       background-color: #2196F3;
-      margin-bottom: 15px;
+      margin-bottom: 8px;
       width: 100%;
     }
-    #location_btn:hover {
+    #stop_tracking_btn {
+      background-color: #f44336;
+      margin-bottom: 15px;
+      width: 100%;
+      display: none;
+    }
+    #location_btn:hover, #track_location_btn:hover {
       background-color: #0b7dda;
+    }
+    #stop_tracking_btn:hover {
+      background-color: #d32f2f;
     }
     #location_status {
       margin-bottom: 15px;
@@ -126,6 +135,33 @@
     }
     .toggle-icon.collapsed {
       transform: rotate(180deg);
+    }
+    .location-badge {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-size: 12px;
+      z-index: 1000;
+      display: none;
+    }
+    .location-field {
+      margin-bottom: 5px;
+    }
+    .location-field span {
+      font-weight: bold;
+    }
+    .tracking-active {
+      background-color: #4CAF50 !important;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
     }
   </style>
 </head>
@@ -181,7 +217,22 @@
       <button id="generate" style="width: 100%; margin-bottom: 15px;">Generate Tree Layout</button>
       
       <button id="location_btn">Show My Current Location</button>
+      <button id="track_location_btn">Start Continuous GPS Tracking</button>
+      <button id="stop_tracking_btn">Stop GPS Tracking</button>
       <div id="location_status"></div>
+      
+      <div class="input-group">
+        <label for="follow_mode">Auto follow location:</label>
+        <select id="follow_mode">
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label for="tracking_interval">GPS update interval (sec):</label>
+        <input type="number" id="tracking_interval" value="2" min="1" max="30">
+      </div>
       
       <div class="action-buttons">
         <button id="rotate_left">⟲ Rotate Left</button>
@@ -206,6 +257,13 @@
     <button id="toggle_sidebar"><span class="toggle-icon">◄</span></button>
     
     <div id="map"></div>
+    
+    <div class="location-badge" id="location_badge">
+      <div class="location-field"><span>Lat:</span> <span id="current_lat">-</span></div>
+      <div class="location-field"><span>Lng:</span> <span id="current_lng">-</span></div>
+      <div class="location-field"><span>Acc:</span> <span id="current_accuracy">-</span> m</div>
+      <div class="location-field"><span>Last update:</span> <span id="last_update">-</span></div>
+    </div>
   </div>
 
   <script>
@@ -247,6 +305,10 @@
     // Create a layer for the user's location marker
     let userLocationMarker = null;
     let userLocationCircle = null;
+    let watchId = null;
+    let isTracking = false;
+    let locationHistory = [];
+    let locationHistoryLayer = L.layerGroup().addTo(map);
     
     // Get DOM elements
     const sidebar = document.getElementById('sidebar');
@@ -261,7 +323,16 @@
     const mapTypeSelect = document.getElementById('map_type');
     const generateBtn = document.getElementById('generate');
     const locationBtn = document.getElementById('location_btn');
+    const trackLocationBtn = document.getElementById('track_location_btn');
+    const stopTrackingBtn = document.getElementById('stop_tracking_btn');
+    const followModeSelect = document.getElementById('follow_mode');
+    const trackingIntervalInput = document.getElementById('tracking_interval');
     const locationStatus = document.getElementById('location_status');
+    const locationBadge = document.getElementById('location_badge');
+    const currentLat = document.getElementById('current_lat');
+    const currentLng = document.getElementById('current_lng');
+    const currentAccuracy = document.getElementById('current_accuracy');
+    const lastUpdate = document.getElementById('last_update');
     const rotateLeftBtn = document.getElementById('rotate_left');
     const rotateRightBtn = document.getElementById('rotate_right');
     const moveUpBtn = document.getElementById('move_up');
@@ -286,7 +357,79 @@
       map.invalidateSize(false);
     }
     
-    // Function to get user's current location
+    // Function to get current time as string
+    function getCurrentTimeString() {
+      const now = new Date();
+      return now.toLocaleTimeString();
+    }
+    
+    // Function to update location display
+    function updateLocationDisplay(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+      
+      // Update location badge
+      currentLat.textContent = lat.toFixed(6);
+      currentLng.textContent = lng.toFixed(6);
+      currentAccuracy.textContent = Math.round(accuracy);
+      lastUpdate.textContent = getCurrentTimeString();
+      
+      // Show location badge if not already visible
+      locationBadge.style.display = 'block';
+      
+      return { lat, lng, accuracy };
+    }
+    
+    // Function to update location marker
+    function updateLocationMarker(lat, lng, accuracy) {
+      // If we already have a marker, remove it
+      if (userLocationMarker) {
+        map.removeLayer(userLocationMarker);
+      }
+      if (userLocationCircle) {
+        map.removeLayer(userLocationCircle);
+      }
+      
+      // Add a marker at the user's location
+      userLocationMarker = L.circleMarker([lat, lng], {
+        radius: 8,
+        color: '#fff',
+        fillColor: '#2196F3',
+        fillOpacity: 1,
+        weight: 2
+      }).addTo(map);
+      
+      // Add a circle showing accuracy
+      userLocationCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#2196F3',
+        fillColor: '#2196F3',
+        fillOpacity: 0.15,
+        weight: 1
+      }).addTo(map);
+      
+      // Update location history
+      if (isTracking) {
+        // Add point to location history
+        locationHistory.push([lat, lng]);
+        
+        // Update location history path
+        locationHistoryLayer.clearLayers();
+        L.polyline(locationHistory, {
+          color: '#2196F3',
+          weight: 3,
+          opacity: 0.7
+        }).addTo(locationHistoryLayer);
+      }
+      
+      // Center map if follow mode is enabled
+      if (isTracking && followModeSelect.value === 'yes') {
+        map.setView([lat, lng]);
+      }
+    }
+    
+    // Function to get user's current location once
     function getUserLocation() {
       locationStatus.textContent = "Requesting your location...";
       
@@ -298,37 +441,11 @@
       navigator.geolocation.getCurrentPosition(
         // Success callback
         function(position) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = position.coords.accuracy;
-          
+          const { lat, lng, accuracy } = updateLocationDisplay(position);
           locationStatus.textContent = `Location found! Accuracy: ${Math.round(accuracy)} meters`;
           
-          // If we already have a marker, remove it
-          if (userLocationMarker) {
-            map.removeLayer(userLocationMarker);
-          }
-          if (userLocationCircle) {
-            map.removeLayer(userLocationCircle);
-          }
-          
-          // Add a marker at the user's location
-          userLocationMarker = L.circleMarker([lat, lng], {
-            radius: 8,
-            color: '#fff',
-            fillColor: '#2196F3',
-            fillOpacity: 1,
-            weight: 2
-          }).addTo(map);
-          
-          // Add a circle showing accuracy
-          userLocationCircle = L.circle([lat, lng], {
-            radius: accuracy,
-            color: '#2196F3',
-            fillColor: '#2196F3',
-            fillOpacity: 0.15,
-            weight: 1
-          }).addTo(map);
+          // Update location marker
+          updateLocationMarker(lat, lng, accuracy);
           
           // Center map on user's location
           map.setView([lat, lng], 18);
@@ -339,20 +456,7 @@
         },
         // Error callback
         function(error) {
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              locationStatus.textContent = "User denied the request for Geolocation";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              locationStatus.textContent = "Location information is unavailable";
-              break;
-            case error.TIMEOUT:
-              locationStatus.textContent = "The request to get user location timed out";
-              break;
-            case error.UNKNOWN_ERROR:
-              locationStatus.textContent = "An unknown error occurred";
-              break;
-          }
+          handleLocationError(error);
         },
         // Options
         {
@@ -361,6 +465,102 @@
           maximumAge: 0
         }
       );
+    }
+    
+    // Function to handle location errors
+    function handleLocationError(error) {
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          locationStatus.textContent = "User denied the request for Geolocation";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          locationStatus.textContent = "Location information is unavailable";
+          break;
+        case error.TIMEOUT:
+          locationStatus.textContent = "The request to get user location timed out";
+          break;
+        case error.UNKNOWN_ERROR:
+          locationStatus.textContent = "An unknown error occurred";
+          break;
+      }
+    }
+    
+    // Function to start continuous location tracking
+    function startLocationTracking() {
+      if (isTracking) return;
+      
+      if (!navigator.geolocation) {
+        locationStatus.textContent = "Geolocation is not supported by your browser";
+        return;
+      }
+      
+      // Start tracking
+      isTracking = true;
+      locationHistory = []; // Reset location history
+      locationHistoryLayer.clearLayers();
+      
+      // Update UI
+      trackLocationBtn.style.display = 'none';
+      stopTrackingBtn.style.display = 'block';
+      trackLocationBtn.classList.add('tracking-active');
+      locationStatus.textContent = "GPS tracking active...";
+      
+      // Get tracking interval from input
+      const interval = parseInt(trackingIntervalInput.value) * 1000; // Convert to milliseconds
+      
+      // Get initial position
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const { lat, lng, accuracy } = updateLocationDisplay(position);
+          updateLocationMarker(lat, lng, accuracy);
+          map.setView([lat, lng], 18);
+          baseLat = lat;
+          baseLng = lng;
+        },
+        handleLocationError,
+        { enableHighAccuracy: true }
+      );
+      
+      // Set up continuous tracking
+      watchId = navigator.geolocation.watchPosition(
+        // Success callback
+        function(position) {
+          const { lat, lng, accuracy } = updateLocationDisplay(position);
+          updateLocationMarker(lat, lng, accuracy);
+          
+          // Update base coordinates for tree generation if tracking is being used as a reference
+          if (locationHistory.length === 1) { // First update after initial position
+            baseLat = lat;
+            baseLng = lng;
+          }
+        },
+        // Error callback
+        handleLocationError,
+        // Options
+        {
+          enableHighAccuracy: true,
+          timeout: interval,
+          maximumAge: 0
+        }
+      );
+    }
+    
+    // Function to stop location tracking
+    function stopLocationTracking() {
+      if (!isTracking) return;
+      
+      // Stop tracking
+      isTracking = false;
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      
+      // Update UI
+      trackLocationBtn.style.display = 'block';
+      stopTrackingBtn.style.display = 'none';
+      trackLocationBtn.classList.remove('tracking-active');
+      locationStatus.textContent = "GPS tracking stopped. Track has been preserved.";
     }
     
     // Function to convert feet to degrees based on latitude
@@ -404,10 +604,12 @@
       
       console.log(`Generated ${trees.length} tree positions`);
       
-      // Get map center for base positioning
-      const mapCenter = map.getCenter();
-      baseLat = mapCenter.lat;
-      baseLng = mapCenter.lng;
+      // Get map center for base positioning if not tracking
+      if (!isTracking || locationHistory.length === 0) {
+        const mapCenter = map.getCenter();
+        baseLat = mapCenter.lat;
+        baseLng = mapCenter.lng;
+      }
       
       // Apply rotation and place trees
       treesRotated = [];
@@ -491,6 +693,14 @@
       getUserLocation();
     });
     
+    trackLocationBtn.addEventListener('click', function() {
+      startLocationTracking();
+    });
+    
+    stopTrackingBtn.addEventListener('click', function() {
+      stopLocationTracking();
+    });
+    
     rotateLeftBtn.addEventListener('click', function() {
       updateTreePositions(0, 0, -5);
     });
@@ -523,6 +733,15 @@
       } else {
         map.removeLayer(satelliteLayer);
         streetsLayer.addTo(map);
+      }
+    });
+    
+    // Handle tracking interval changes
+    trackingIntervalInput.addEventListener('change', function() {
+      if (isTracking) {
+        // Restart tracking with new interval
+        stopLocationTracking();
+        startLocationTracking();
       }
     });
     
