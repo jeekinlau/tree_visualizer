@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orchard Tree Spacing Visualizer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet CSS and JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet Measure Plugin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
+  
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 300px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    #sidebar.collapsed {
+      transform: translateX(-100%);
+      width: 0;
+    }
+    #map {
+      flex-grow: 1;
+      height: 100%;
+      width: 100%;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 5px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .instructions {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.5em;
+    }
+    h4 {
+      margin-bottom: 5px;
+    }
+    #location_btn {
+      background-color: #2196F3;
+      margin-bottom: 15px;
+      width: 100%;
+    }
+    #location_btn:hover {
+      background-color: #0b7dda;
+    }
+    #location_status {
+      margin-bottom: 15px;
+      font-style: italic;
+      color: #666;
+    }
+    #toggle_sidebar {
+      position: absolute;
+      top: 10px;
+      left: 310px;
+      z-index: 1001;
+      background-color: #555;
+      color: white;
+      border-radius: 0 4px 4px 0;
+      padding: 10px 15px;
+      transition: left 0.3s ease;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+    #toggle_sidebar.collapsed {
+      left: 10px;
+    }
+    .toggle-icon {
+      display: inline-block;
+      width: 10px;
+      transition: transform 0.3s ease;
+    }
+    .toggle-icon.collapsed {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar">
+      <h1>Orchard Tree Spacing Visualizer</h1>
+      
+      <div class="input-group">
+        <label for="tree_spacing">Tree spacing within rows (ft):</label>
+        <input type="number" id="tree_spacing" value="16" min="1">
+      </div>
+      
+      <div class="input-group">
+        <label for="row_spacing">Row spacing (ft):</label>
+        <input type="number" id="row_spacing" value="16" min="1">
+      </div>
+      
+      <div class="input-group">
+        <label for="num_rows">Number of rows:</label>
+        <input type="number" id="num_rows" value="10" min="1">
+      </div>
+      
+      <div class="input-group">
+        <label for="trees_per_row">Trees per row:</label>
+        <input type="number" id="trees_per_row" value="10" min="1">
+      </div>
+      
+      <div class="input-group">
+        <label for="rotation">Field rotation (degrees):</label>
+        <input type="number" id="rotation" value="0" min="0" max="360">
+      </div>
+      
+      <div class="input-group">
+        <label for="tree_color">Tree marker color:</label>
+        <select id="tree_color">
+          <option value="green">Green</option>
+          <option value="red">Red</option>
+          <option value="blue">Blue</option>
+          <option value="yellow">Yellow</option>
+          <option value="purple">Purple</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label for="map_type">Select map type:</label>
+        <select id="map_type">
+          <option value="satellite">Satellite</option>
+          <option value="streets">Streets</option>
+        </select>
+      </div>
+      
+      <button id="generate" style="width: 100%; margin-bottom: 15px;">Generate Tree Layout</button>
+      
+      <button id="location_btn">Show My Current Location</button>
+      <div id="location_status"></div>
+      
+      <div class="action-buttons">
+        <button id="rotate_left">⟲ Rotate Left</button>
+        <button id="rotate_right">⟳ Rotate Right</button>
+        <button id="move_up">↑ Move Up</button>
+        <button id="move_down">↓ Move Down</button>
+        <button id="move_left">← Move Left</button>
+        <button id="move_right">→ Move Right</button>
+      </div>
+      
+      <div class="instructions">
+        <h4>Measurement Tool Instructions:</h4>
+        <ul>
+          <li>Click the ruler icon on the map</li>
+          <li>Draw lines/shapes to measure</li>
+          <li>Click points to measure</li>
+          <li>Double-click to finish measurement</li>
+        </ul>
+      </div>
+    </div>
+    
+    <button id="toggle_sidebar"><span class="toggle-icon">◄</span></button>
+    
+    <div id="map"></div>
+  </div>
+
+  <script>
+    // Initialize map
+    const map = L.map('map', {
+      maxZoom: 22
+    }).setView([32.65322, -83.73808], 16);
+    
+    // Add satellite layer (default)
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 22
+    }).addTo(map);
+    
+    // Create streets layer
+    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 22
+    });
+    
+    // Add measurement control
+    const measureControl = new L.Control.Measure({
+      position: 'topleft',
+      primaryLengthUnit: 'feet',
+      secondaryLengthUnit: 'miles',
+      primaryAreaUnit: 'acres',
+      activeColor: '#3D535D',
+      completedColor: '#7D4479'
+    });
+    measureControl.addTo(map);
+    
+    // Store tree markers and data
+    let treeMarkers = L.layerGroup().addTo(map);
+    let trees = [];
+    let treesRotated = [];
+    let baseLat = 32.65322;
+    let baseLng = -83.73808;
+    
+    // Create a layer for the user's location marker
+    let userLocationMarker = null;
+    let userLocationCircle = null;
+    
+    // Get DOM elements
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebarBtn = document.getElementById('toggle_sidebar');
+    const toggleIcon = toggleSidebarBtn.querySelector('.toggle-icon');
+    const treeSpacingInput = document.getElementById('tree_spacing');
+    const rowSpacingInput = document.getElementById('row_spacing');
+    const numRowsInput = document.getElementById('num_rows');
+    const treesPerRowInput = document.getElementById('trees_per_row');
+    const rotationInput = document.getElementById('rotation');
+    const treeColorSelect = document.getElementById('tree_color');
+    const mapTypeSelect = document.getElementById('map_type');
+    const generateBtn = document.getElementById('generate');
+    const locationBtn = document.getElementById('location_btn');
+    const locationStatus = document.getElementById('location_status');
+    const rotateLeftBtn = document.getElementById('rotate_left');
+    const rotateRightBtn = document.getElementById('rotate_right');
+    const moveUpBtn = document.getElementById('move_up');
+    const moveDownBtn = document.getElementById('move_down');
+    const moveLeftBtn = document.getElementById('move_left');
+    const moveRightBtn = document.getElementById('move_right');
+    
+    // Toggle sidebar function
+    function toggleSidebar() {
+      sidebar.classList.toggle('collapsed');
+      toggleSidebarBtn.classList.toggle('collapsed');
+      toggleIcon.classList.toggle('collapsed');
+      
+      // Change toggle icon
+      if (toggleIcon.classList.contains('collapsed')) {
+        toggleIcon.innerHTML = '►';
+      } else {
+        toggleIcon.innerHTML = '◄';
+      }
+      
+      // Force map to resize immediately
+      map.invalidateSize(false);
+    }
+    
+    // Function to get user's current location
+    function getUserLocation() {
+      locationStatus.textContent = "Requesting your location...";
+      
+      if (!navigator.geolocation) {
+        locationStatus.textContent = "Geolocation is not supported by your browser";
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        // Success callback
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+          
+          locationStatus.textContent = `Location found! Accuracy: ${Math.round(accuracy)} meters`;
+          
+          // If we already have a marker, remove it
+          if (userLocationMarker) {
+            map.removeLayer(userLocationMarker);
+          }
+          if (userLocationCircle) {
+            map.removeLayer(userLocationCircle);
+          }
+          
+          // Add a marker at the user's location
+          userLocationMarker = L.circleMarker([lat, lng], {
+            radius: 8,
+            color: '#fff',
+            fillColor: '#2196F3',
+            fillOpacity: 1,
+            weight: 2
+          }).addTo(map);
+          
+          // Add a circle showing accuracy
+          userLocationCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: '#2196F3',
+            fillColor: '#2196F3',
+            fillOpacity: 0.15,
+            weight: 1
+          }).addTo(map);
+          
+          // Center map on user's location
+          map.setView([lat, lng], 18);
+          
+          // Update base coordinates for tree generation
+          baseLat = lat;
+          baseLng = lng;
+        },
+        // Error callback
+        function(error) {
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              locationStatus.textContent = "User denied the request for Geolocation";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              locationStatus.textContent = "Location information is unavailable";
+              break;
+            case error.TIMEOUT:
+              locationStatus.textContent = "The request to get user location timed out";
+              break;
+            case error.UNKNOWN_ERROR:
+              locationStatus.textContent = "An unknown error occurred";
+              break;
+          }
+        },
+        // Options
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+    
+    // Function to convert feet to degrees based on latitude
+    function ftToDeg(feet, lat) {
+      // At the equator, 1 degree of latitude ≈ 364,000 feet
+      const latDeg = feet / 364000;
+      
+      // At the equator, 1 degree of longitude ≈ 364,000 feet
+      // Adjust by cosine of latitude
+      const lngDeg = feet / (364000 * Math.cos(lat * Math.PI / 180));
+      
+      return { lat: latDeg, lng: lngDeg };
+    }
+    
+    // Function to generate trees
+    function generateTrees() {
+      console.log("Generating trees...");
+      
+      // Clear existing markers
+      treeMarkers.clearLayers();
+      
+      const treeSpacing = parseFloat(treeSpacingInput.value);
+      const rowSpacing = parseFloat(rowSpacingInput.value);
+      const numRows = parseInt(numRowsInput.value);
+      const treesPerRow = parseInt(treesPerRowInput.value);
+      const rotation = parseFloat(rotationInput.value);
+      
+      console.log(`Tree spacing: ${treeSpacing}, Row spacing: ${rowSpacing}`);
+      console.log(`Rows: ${numRows}, Trees per row: ${treesPerRow}, Rotation: ${rotation}`);
+      
+      // Generate base tree coordinates (before rotation)
+      trees = [];
+      for (let row = 0; row < numRows; row++) {
+        for (let col = 0; col < treesPerRow; col++) {
+          trees.push({
+            x: col * treeSpacing,
+            y: row * rowSpacing
+          });
+        }
+      }
+      
+      console.log(`Generated ${trees.length} tree positions`);
+      
+      // Get map center for base positioning
+      const mapCenter = map.getCenter();
+      baseLat = mapCenter.lat;
+      baseLng = mapCenter.lng;
+      
+      // Apply rotation and place trees
+      treesRotated = [];
+      updateTreePositions(0, 0, rotation, true);
+    }
+    
+    // Function to update tree positions
+    function updateTreePositions(dx = 0, dy = 0, dangle = 0, isNewGeneration = false) {
+      // Get current angle
+      let currentAngle = isNewGeneration ? 0 : parseFloat(rotationInput.value);
+      let newAngle = currentAngle + dangle;
+      
+      // Update rotation input if angle changed
+      if (dangle !== 0) {
+        rotationInput.value = newAngle;
+      }
+      
+      // Clear existing markers
+      treeMarkers.clearLayers();
+      
+      // Get map center for calculations
+      const treeColor = treeColorSelect.value;
+      
+      // Conversion factor based on latitude
+      const degConversion = ftToDeg(1, baseLat);
+      
+      // Calculate rotated positions
+      treesRotated = trees.map(tree => {
+        // Apply translation if not a new generation
+        let xPos = tree.x;
+        let yPos = tree.y;
+        
+        if (!isNewGeneration && treesRotated.length > 0) {
+          // If we already have rotated trees, adjust from previous positions
+          xPos = tree.x + dx;
+          yPos = tree.y + dy;
+          
+          // Update the base tree positions for future movements
+          tree.x = xPos;
+          tree.y = yPos;
+        }
+        
+        // Apply rotation
+        const angleRad = newAngle * Math.PI / 180;
+        const xRot = xPos * Math.cos(angleRad) - yPos * Math.sin(angleRad);
+        const yRot = xPos * Math.sin(angleRad) + yPos * Math.cos(angleRad);
+        
+        // Convert to lat/lng
+        const lat = baseLat + yRot * degConversion.lat;
+        const lng = baseLng + xRot * degConversion.lng;
+        
+        return {
+          lat: lat,
+          lng: lng
+        };
+      });
+      
+      // Add markers to map
+      treesRotated.forEach(tree => {
+        L.circleMarker([tree.lat, tree.lng], {
+          radius: 3,
+          color: treeColor,
+          fillColor: treeColor,
+          fillOpacity: 0.7,
+          stroke: false
+        }).addTo(treeMarkers);
+      });
+      
+      console.log(`Updated ${treesRotated.length} tree positions`);
+    }
+    
+    // Event listeners
+    toggleSidebarBtn.addEventListener('click', toggleSidebar);
+    
+    generateBtn.addEventListener('click', function() {
+      console.log("Generate button clicked");
+      generateTrees();
+    });
+    
+    locationBtn.addEventListener('click', function() {
+      getUserLocation();
+    });
+    
+    rotateLeftBtn.addEventListener('click', function() {
+      updateTreePositions(0, 0, -5);
+    });
+    
+    rotateRightBtn.addEventListener('click', function() {
+      updateTreePositions(0, 0, 5);
+    });
+    
+    moveUpBtn.addEventListener('click', function() {
+      updateTreePositions(0, 10, 0);
+    });
+    
+    moveDownBtn.addEventListener('click', function() {
+      updateTreePositions(0, -10, 0);
+    });
+    
+    moveLeftBtn.addEventListener('click', function() {
+      updateTreePositions(-10, 0, 0);
+    });
+    
+    moveRightBtn.addEventListener('click', function() {
+      updateTreePositions(10, 0, 0);
+    });
+    
+    mapTypeSelect.addEventListener('change', function() {
+      const mapType = mapTypeSelect.value;
+      if (mapType === 'satellite') {
+        map.removeLayer(streetsLayer);
+        satelliteLayer.addTo(map);
+      } else {
+        map.removeLayer(satelliteLayer);
+        streetsLayer.addTo(map);
+      }
+    });
+    
+    // Ensure map responsiveness on window resize
+    window.addEventListener('resize', function() {
+      map.invalidateSize(false);
+    });
+    
+    // Generate initial trees when the page loads
+    window.onload = function() {
+      console.log("Page loaded");
+      setTimeout(generateTrees, 500); // Delay to ensure map is fully loaded
+    };
+  </script>
+</body>
+</html>
