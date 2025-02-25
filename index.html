@@ -198,8 +198,8 @@
       <div class="input-group">
         <label for="tree_color">Tree marker color:</label>
         <select id="tree_color">
-          <option value="green">Green</option>
           <option value="red">Red</option>
+          <option value="green">Green</option>
           <option value="blue">Blue</option>
           <option value="yellow">Yellow</option>
           <option value="purple">Purple</option>
@@ -235,13 +235,13 @@
       </div>
       
       <div class="action-buttons">
-        <button id="rotate_left">⟲ Rotate Left</button>
-        <button id="rotate_right">⟳ Rotate Right</button>
+        <button id="rotate_left">↻ Clockwise</button>
+        <button id="rotate_right">↺ Counter-clockwise</button>
         <button id="move_up">↑ Move Up</button>
         <button id="move_down">↓ Move Down</button>
         <button id="move_left">← Move Left</button>
         <button id="move_right">→ Move Right</button>
-      </div>
+    </div>
       
       <div class="instructions">
         <h4>Measurement Tool Instructions:</h4>
@@ -376,6 +376,10 @@ map.off('measurestop');
     let baseLat = 32.65322;
     let baseLng = -83.73808;
     
+    
+
+
+
     // Create a layer for the user's location marker
     let userLocationMarker = null;
     let userLocationCircle = null;
@@ -776,11 +780,11 @@ map.off('measurestop');
     });
     
     rotateLeftBtn.addEventListener('click', function() {
-      updateTreePositions(0, 0, -5);
+      updateTreePositions(0, 0, -1);
     });
     
     rotateRightBtn.addEventListener('click', function() {
-      updateTreePositions(0, 0, 5);
+      updateTreePositions(0, 0, 1);
     });
     
     moveUpBtn.addEventListener('click', function() {
