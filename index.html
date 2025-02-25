@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
-  <!-- Leaflet Measure Plugin -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
-  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
+<!-- Replace the Leaflet Measure Plugin section with these new imports -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
   
   <style>
     body {
@@ -284,17 +284,91 @@
       maxZoom: 22
     });
     
-    // Add measurement control
-    const measureControl = new L.Control.Measure({
-      position: 'topleft',
-      primaryLengthUnit: 'feet',
-      secondaryLengthUnit: 'miles',
-      primaryAreaUnit: 'acres',
-      activeColor: '#3D535D',
-      completedColor: '#7D4479'
-    });
-    measureControl.addTo(map);
+// Initialize the FeatureGroup to store editable layers
+const drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+// Configure the draw control
+const drawControl = new L.Control.Draw({
+  draw: {
+      marker: false,
+      circle: false,
+      circlemarker: false,
+      rectangle: false,
+      polygon: false,
+      polyline: {
+          shapeOptions: {
+              color: '#FFA500',  // Bright orange
+              weight: 3,         // Line weight
+              opacity: 1,
+              lineCap: 'round',
+              lineJoin: 'round'
+          },
+          metric: false,
+          feet: true,
+          showLength: true,
+          guidelineDistance: 5,
+          vertices: {
+              first: {
+                  icon: new L.DivIcon({
+                      className: 'leaflet-div-icon',
+                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+                  })
+              },
+              mid: {
+                  icon: new L.DivIcon({
+                      className: 'leaflet-div-icon',
+                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+                  })
+              },
+              last: {
+                  icon: new L.DivIcon({
+                      className: 'leaflet-div-icon',
+                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+                  })
+              }
+          }
+      }
+  },
+  edit: {
+      featureGroup: drawnItems,
+      remove: true
+  }
+});
+map.addControl(drawControl);
+
+// Handle created measurements
+map.on('draw:created', function(e) {
+    const layer = e.layer;
+    drawnItems.addLayer(layer);
     
+    // Calculate and display measurement
+    if (layer instanceof L.Polyline) {
+        const distanceInFeet = calculateDistanceInFeet(layer);
+        layer.bindPopup(`Distance: ${distanceInFeet.toFixed(2)} feet`).openPopup();
+    }
+});
+
+// Calculate distance in feet
+function calculateDistanceInFeet(layer) {
+    const latlngs = layer.getLatLngs();
+    let totalDistance = 0;
+    
+    for (let i = 1; i < latlngs.length; i++) {
+        totalDistance += latlngs[i-1].distanceTo(latlngs[i]);
+    }
+    
+    // Convert meters to feet (1 meter = 3.28084 feet)
+    return totalDistance * 3.28084;
+}
+
+// Remove old measurement handlers if they exist
+map.off('measurestart');
+map.off('measurefinish');
+map.off('measurestop');
+
+
+
     // Store tree markers and data
     let treeMarkers = L.layerGroup().addTo(map);
     let trees = [];
