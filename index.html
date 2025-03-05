@@ -275,7 +275,13 @@
     // Add satellite layer (default)
     let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri',
-      maxZoom: 22
+      maxZoom: 22,
+      maxNativeZoom: 19, // Maximum zoom level for which tiles are available
+      noWrap: true,
+      // Enable high-resolution displays
+      detectRetina: true,
+      // Keep showing the last available tile when zoomed past maxNativeZoom
+      keepBuffer: 4
     }).addTo(map);
     
     // Create streets layer
