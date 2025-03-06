@@ -573,6 +573,9 @@ function startExternalGPS(interval) {
 
 // Unified position update handler
 function handlePositionUpdate(position) {
+  // Update last GPS data time
+  lastUpdateTime = Date.now();
+
   const { lat, lng, accuracy } = updateLocationDisplay(position);
   updateLocationMarker(lat, lng, accuracy);
   
@@ -621,18 +624,29 @@ let lastUpdateTime = Date.now();
 const GPS_TIMEOUT = 5000; // 5 seconds
 
 function checkGPSStatus() {
-    const gpsSource = document.getElementById('gps_source');
-    const gpsSignal = document.getElementById('gps_signal');
-    const gpsAge = document.getElementById('gps_age');
-    
-    if (isTracking && Date.now() - lastUpdateTime > GPS_TIMEOUT) {
-        gpsSource.textContent = 'No Data';
-        gpsSource.className = 'gps-inactive';
-        gpsSignal.textContent = 'No Fix';
-        gpsSignal.className = 'gps-inactive';
-        gpsAge.textContent = 'Timeout';
-        gpsAge.className = 'gps-inactive';
-    }
+  const gpsSource = document.getElementById('gps_source');
+  const gpsSignal = document.getElementById('gps_signal');
+  const gpsAge = document.getElementById('gps_age');
+  
+  if (isTracking) {
+      const timeSinceLastUpdate = Date.now() - lastUpdateTime;
+      if (timeSinceLastUpdate > GPS_TIMEOUT) {
+          gpsSource.textContent = 'No Data';
+          gpsSource.className = 'gps-inactive';
+          gpsSignal.textContent = 'No Fix';
+          gpsSignal.className = 'gps-inactive';
+          gpsAge.textContent = 'Timeout';
+          gpsAge.className = 'gps-inactive';
+      }
+  } else {
+      // Not tracking, show inactive state
+      gpsSource.textContent = 'Not Tracking';
+      gpsSource.className = 'gps-inactive';
+      gpsSignal.textContent = 'Inactive';
+      gpsSignal.className = 'gps-inactive';
+      gpsAge.textContent = '-';
+      gpsAge.className = 'gps-inactive';
+  }
 }
 
 // Start GPS status monitoring
