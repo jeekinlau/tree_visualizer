@@ -162,6 +162,30 @@
       margin-bottom: 15px;
       width: 100%;
     }
+    .gps-status {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      padding: 8px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .gps-status div {
+      margin-bottom: 4px;
+    }
+    
+    .gps-status span {
+      font-weight: bold;
+    }
+    
+    .gps-active {
+      color: #4CAF50;
+    }
+    
+    .gps-inactive {
+      color: #f44336;
+    }
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.7; }
@@ -233,7 +257,11 @@
           <option value="external">External GPS</option>
         </select>
       </div>
-
+      <div id="gps_status" class="gps-status">
+        <div>Source: <span id="gps_source">None</span></div>
+        <div>Signal: <span id="gps_signal">No Fix</span></div>
+        <div>Data Age: <span id="gps_age">-</span></div>
+      </div>
 
       <div class="input-group">
         <label for="follow_mode">Auto follow location:</label>
@@ -290,20 +318,50 @@
     let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri',
       maxZoom: 22,
-          maxNativeZoom: 19, // Maximum zoom level for which tiles are available
-    noWrap: true,
-    // Enable high-resolution displays
-    detectRetina: true,
-    // Keep showing the last available tile when zoomed past maxNativeZoom
-    keepBuffer: 4
+      maxNativeZoom: 19,
+      noWrap: true,
+      detectRetina: true,
+      keepBuffer: 4,
+      updateWhenIdle: false,
+      updateWhenZooming: false,
+      preferCanvas: true,
+      // Add iOS-specific options
+      bounceAtZoomLimits: false,
+      touchZoom: 'center',
+      pinchZoom: true,
+      // Improve tile loading behavior
+      updateInterval: 100,
+      zoomSnap: 0,
+      zoomDelta: 1
     }).addTo(map);
     
     // Create streets layer
-    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 22
+let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    noWrap: true,
+    detectRetina: true,
+    keepBuffer: 4,
+    updateWhenIdle: false,
+    updateWhenZooming: false,
+    preferCanvas: true,
+    // Add iOS-specific options
+    bounceAtZoomLimits: false,
+    touchZoom: 'center',
+    pinchZoom: true,
+    // Improve tile loading behavior
+    updateInterval: 100,
+    zoomSnap: 0,
+    zoomDelta: 1
     });
+
+    // Update map options
+map.options.smoothWheelZoom = true;
+map.options.wheelDebounceTime = 100;
+map.options.preferCanvas = true;
     
+
 // Initialize the FeatureGroup to store editable layers
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
@@ -515,15 +573,70 @@ function startExternalGPS(interval) {
 
 // Unified position update handler
 function handlePositionUpdate(position) {
-    const { lat, lng, accuracy } = updateLocationDisplay(position);
-    updateLocationMarker(lat, lng, accuracy);
+  const { lat, lng, accuracy } = updateLocationDisplay(position);
+  updateLocationMarker(lat, lng, accuracy);
+  
+  // Update GPS status
+  const gpsSource = document.getElementById('gps_source');
+  const gpsSignal = document.getElementById('gps_signal');
+  const gpsAge = document.getElementById('gps_age');
+  
+  // Determine GPS source
+  if (locationSource.value === 'external') {
+      gpsSource.textContent = 'External GPS';
+      gpsSource.className = 'gps-active';
+  } else {
+      gpsSource.textContent = 'Browser GPS';
+      gpsSource.className = 'gps-active';
+  }
+
+  // Check signal quality based on accuracy
+  if (accuracy <= 5) {
+      gpsSignal.textContent = 'Excellent';
+      gpsSignal.className = 'gps-active';
+  } else if (accuracy <= 10) {
+      gpsSignal.textContent = 'Good';
+      gpsSignal.className = 'gps-active';
+  } else if (accuracy <= 20) {
+      gpsSignal.textContent = 'Fair';
+      gpsSignal.className = 'gps-active';
+  } else {
+      gpsSignal.textContent = 'Poor';
+      gpsSignal.className = 'gps-inactive';
+  }
+
+  // Calculate and display data age
+  const timestamp = position.timestamp ? position.timestamp : Date.now();
+  const age = Date.now() - timestamp;
+  gpsAge.textContent = age < 1000 ? 'Current' : Math.round(age/1000) + 's ago';
+  gpsAge.className = age < 2000 ? 'gps-active' : 'gps-inactive';
+
+  if (locationHistory.length === 0) {
+      baseLat = lat;
+      baseLng = lng;
+      map.setView([lat, lng], 18);
+  }
+}
+let lastUpdateTime = Date.now();
+const GPS_TIMEOUT = 5000; // 5 seconds
+
+function checkGPSStatus() {
+    const gpsSource = document.getElementById('gps_source');
+    const gpsSignal = document.getElementById('gps_signal');
+    const gpsAge = document.getElementById('gps_age');
     
-    if (locationHistory.length === 0) {
-        baseLat = lat;
-        baseLng = lng;
-        map.setView([lat, lng], 18);
+    if (isTracking && Date.now() - lastUpdateTime > GPS_TIMEOUT) {
+        gpsSource.textContent = 'No Data';
+        gpsSource.className = 'gps-inactive';
+        gpsSignal.textContent = 'No Fix';
+        gpsSignal.className = 'gps-inactive';
+        gpsAge.textContent = 'Timeout';
+        gpsAge.className = 'gps-inactive';
     }
 }
+
+// Start GPS status monitoring
+setInterval(checkGPSStatus, 1000);
 
     // Toggle sidebar function
     function toggleSidebar() {
@@ -673,7 +786,14 @@ function handlePositionUpdate(position) {
     // Function to start continuous location tracking
     function startLocationTracking() {
       if (isTracking) return;
-      
+          // Initialize GPS status
+    const gpsSource = document.getElementById('gps_source');
+    const gpsSignal = document.getElementById('gps_signal');
+    const gpsAge = document.getElementById('gps_age');
+    
+    gpsSource.textContent = 'Connecting...';
+    gpsSignal.textContent = 'Waiting';
+    gpsAge.textContent = '-';
       if (!navigator.geolocation) {
         locationStatus.textContent = "Geolocation is not supported by your browser";
         return;
