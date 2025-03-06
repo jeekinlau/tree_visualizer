@@ -186,6 +186,36 @@
     .gps-inactive {
       color: #f44336;
     }
+
+
+    .leaflet-tile {
+      visibility: inherit !important;
+      backface-visibility: hidden;
+  }
+  
+  .leaflet-container {
+      background: transparent !important;
+  }
+  
+  .leaflet-tile-container {
+      will-change: transform;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+  }
+  
+  .leaflet-safari .leaflet-tile {
+      image-rendering: -webkit-optimize-contrast;
+  }
+  
+  @supports (-webkit-touch-callout: none) {
+      .leaflet-container {
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+      }
+  }
+
+
+
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.7; }
@@ -311,8 +341,25 @@
   <script>
     // Initialize map
     const map = L.map('map', {
-      maxZoom: 22
-    }).setView([32.65322, -83.73808], 16);
+      maxZoom: 22,
+      minZoom: 1,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 60,
+      bounceAtZoomLimits: false,
+      preferCanvas: true,
+      renderer: L.canvas(),
+      // iOS specific options
+      tap: true,
+      touchZoom: 'center',
+      dragging: true,
+      // Performance options
+      fadeAnimation: false,
+      zoomAnimation: true,
+      markerZoomAnimation: true,
+      transform3DLimit: 2^30
+  }).setView([32.65322, -83.73808], 16);
     
     // Add satellite layer (default)
     let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
