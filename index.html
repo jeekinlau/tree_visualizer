@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Orchard Tree Spacing Visualizer</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- Leaflet CSS and JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-<!-- Replace the Leaflet Measure Plugin section with these new imports -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-  
+
+  <!-- Replace the Leaflet Measure Plugin section with these new imports -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
   <style>
     body {
       padding: 0;
@@ -21,6 +22,7 @@
       height: 100vh;
       overflow: hidden;
     }
+
     #container {
       display: flex;
       height: 100vh;
@@ -28,6 +30,7 @@
       position: relative;
       overflow: hidden;
     }
+
     #sidebar {
       width: 300px;
       padding: 10px;
@@ -38,29 +41,36 @@
       z-index: 1000;
       flex-shrink: 0;
     }
+
     #sidebar.collapsed {
       transform: translateX(-100%);
       width: 0;
     }
+
     #map {
       flex-grow: 1;
       height: 100%;
       width: 100%;
     }
+
     .input-group {
       margin-bottom: 15px;
     }
+
     label {
       display: block;
       margin-bottom: 5px;
       font-weight: bold;
     }
-    input, select {
+
+    input,
+    select {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
       margin-bottom: 5px;
     }
+
     button {
       background-color: #4CAF50;
       color: white;
@@ -70,49 +80,62 @@
       margin-right: 5px;
       margin-bottom: 5px;
     }
+
     button:hover {
       background-color: #45a049;
     }
+
     .action-buttons {
       display: flex;
       flex-wrap: wrap;
       margin-bottom: 15px;
     }
+
     .instructions {
       background-color: #f1f1f1;
       padding: 10px;
       border-radius: 5px;
       margin-top: 20px;
     }
+
     h1 {
       margin-top: 0;
       font-size: 1.5em;
     }
+
     h4 {
       margin-bottom: 5px;
     }
-    #location_btn, #track_location_btn {
+
+    #location_btn,
+    #track_location_btn {
       background-color: #2196F3;
       margin-bottom: 8px;
       width: 100%;
     }
+
     #stop_tracking_btn {
       background-color: #f44336;
       margin-bottom: 15px;
       width: 100%;
       display: none;
     }
-    #location_btn:hover, #track_location_btn:hover {
+
+    #location_btn:hover,
+    #track_location_btn:hover {
       background-color: #0b7dda;
     }
+
     #stop_tracking_btn:hover {
       background-color: #d32f2f;
     }
+
     #location_status {
       margin-bottom: 15px;
       font-style: italic;
       color: #666;
     }
+
     #toggle_sidebar {
       position: absolute;
       top: 10px;
@@ -123,19 +146,23 @@
       border-radius: 0 4px 4px 0;
       padding: 10px 15px;
       transition: left 0.3s ease;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
     }
+
     #toggle_sidebar.collapsed {
       left: 10px;
     }
+
     .toggle-icon {
       display: inline-block;
       width: 10px;
       transition: transform 0.3s ease;
     }
+
     .toggle-icon.collapsed {
       transform: rotate(180deg);
     }
+
     .location-badge {
       position: absolute;
       bottom: 20px;
@@ -143,25 +170,30 @@
       background-color: rgba(255, 255, 255, 0.8);
       padding: 8px 12px;
       border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       font-size: 12px;
       z-index: 1000;
       display: none;
     }
+
     .location-field {
       margin-bottom: 5px;
     }
+
     .location-field span {
       font-weight: bold;
     }
+
     .tracking-active {
       background-color: #4CAF50 !important;
       animation: pulse 2s infinite;
     }
+
     #location_source {
       margin-bottom: 15px;
       width: 100%;
     }
+
     .gps-status {
       background-color: #f8f9fa;
       border: 1px solid #ddd;
@@ -170,19 +202,19 @@
       border-radius: 4px;
       font-size: 12px;
     }
-    
+
     .gps-status div {
       margin-bottom: 4px;
     }
-    
+
     .gps-status span {
       font-weight: bold;
     }
-    
+
     .gps-active {
       color: #4CAF50;
     }
-    
+
     .gps-inactive {
       color: #f44336;
     }
@@ -191,68 +223,77 @@
     .leaflet-tile {
       visibility: inherit !important;
       backface-visibility: hidden;
-  }
-  
-  .leaflet-container {
+    }
+
+    .leaflet-container {
       background: transparent !important;
-  }
-  
-  .leaflet-tile-container {
+    }
+
+    .leaflet-tile-container {
       will-change: transform;
       transform-style: preserve-3d;
       backface-visibility: hidden;
-  }
-  
-  .leaflet-safari .leaflet-tile {
+    }
+
+    .leaflet-safari .leaflet-tile {
       image-rendering: -webkit-optimize-contrast;
-  }
-  
-  @supports (-webkit-touch-callout: none) {
+    }
+
+    @supports (-webkit-touch-callout: none) {
       .leaflet-container {
-          -webkit-transform: translateZ(0);
-          transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
       }
-  }
+    }
 
 
 
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.7; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+
+      100% {
+        opacity: 1;
+      }
     }
   </style>
 </head>
+
 <body>
   <div id="container">
     <div id="sidebar">
       <h1>Orchard Tree Spacing Visualizer</h1>
-      
+
       <div class="input-group">
         <label for="tree_spacing">Tree spacing within rows (ft):</label>
         <input type="number" id="tree_spacing" value="16" min="1">
       </div>
-      
+
       <div class="input-group">
         <label for="row_spacing">Row spacing (ft):</label>
         <input type="number" id="row_spacing" value="16" min="1">
       </div>
-      
+
       <div class="input-group">
         <label for="num_rows">Number of rows:</label>
         <input type="number" id="num_rows" value="10" min="1">
       </div>
-      
+
       <div class="input-group">
         <label for="trees_per_row">Trees per row:</label>
         <input type="number" id="trees_per_row" value="10" min="1">
       </div>
-      
+
       <div class="input-group">
         <label for="rotation">Field rotation (degrees):</label>
         <input type="number" id="rotation" value="0" min="0" max="360">
       </div>
-      
+
       <div class="input-group">
         <label for="tree_color">Tree marker color:</label>
         <select id="tree_color">
@@ -263,7 +304,7 @@
           <option value="purple">Purple</option>
         </select>
       </div>
-      
+
       <div class="input-group">
         <label for="map_type">Select map type:</label>
         <select id="map_type">
@@ -271,14 +312,14 @@
           <option value="streets">Streets</option>
         </select>
       </div>
-      
+
       <button id="generate" style="width: 100%; margin-bottom: 15px;">Generate Tree Layout</button>
-      
+
       <button id="location_btn">Show My Current Location</button>
       <button id="track_location_btn">Start Continuous GPS Tracking</button>
       <button id="stop_tracking_btn">Stop GPS Tracking</button>
       <div id="location_status"></div>
-      
+
       <!-- Add after the existing GPS buttons -->
       <div class="input-group">
         <label for="location_source">GPS Source:</label>
@@ -300,12 +341,12 @@
           <option value="no">No</option>
         </select>
       </div>
-      
+
       <div class="input-group">
         <label for="tracking_interval">GPS update interval (sec):</label>
         <input type="number" id="tracking_interval" value="2" min="1" max="30">
       </div>
-      
+
       <div class="action-buttons">
         <button id="rotate_left">↻ Clockwise</button>
         <button id="rotate_right">↺ Counter-clockwise</button>
@@ -313,8 +354,8 @@
         <button id="move_down">↓ Move Down</button>
         <button id="move_left">← Move Left</button>
         <button id="move_right">→ Move Right</button>
-    </div>
-      
+      </div>
+
       <div class="instructions">
         <h4>Measurement Tool Instructions:</h4>
         <ul>
@@ -325,11 +366,11 @@
         </ul>
       </div>
     </div>
-    
+
     <button id="toggle_sidebar"><span class="toggle-icon">◄</span></button>
-    
+
     <div id="map"></div>
-    
+
     <div class="location-badge" id="location_badge">
       <div class="location-field"><span>Lat:</span> <span id="current_lat">-</span></div>
       <div class="location-field"><span>Lng:</span> <span id="current_lng">-</span></div>
@@ -341,176 +382,176 @@
   <script>
     // Update the map initialization
 
-const map = L.map('map', {
-    maxZoom: 22,
-    minZoom: 1,
-    zoomSnap: 0.1,
-    zoomDelta: 0.5,
-    wheelDebounceTime: 40,
-    wheelPxPerZoomLevel: 60,
-    bounceAtZoomLimits: false,
-    preferCanvas: true,
-    renderer: L.canvas(),
-    // iOS specific options
-    tap: true,
-    touchZoom: 'center',
-    dragging: true,
-    // Performance options
-    fadeAnimation: false,
-    zoomAnimation: true,
-    markerZoomAnimation: true,
-    transform3DLimit: 2^30
-}).setView([32.65322, -83.73808], 16);
-    
-    // Add satellite layer (default)
-let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri',
-    maxZoom: 22,
-    maxNativeZoom: 19,
-    noWrap: true,
-    detectRetina: true,
-    keepBuffer: 8,
-    updateWhenIdle: false,
-    updateWhenZooming: false,
-    preferCanvas: true,
-    // iOS-specific options
-    bounceAtZoomLimits: false,
-    touchZoom: 'center',
-    // Enhanced zoom settings
-    fadeAnimation: false,
-    zoomAnimation: true,
-    zoomSnap: 0.1,
-    zoomDelta: 0.5,
-    // Tile management
-    updateInterval: 0,
-    tileSize: 256,
-    // Force continuous world wrapping
-    continuousWorld: true,
-    // Prevent gray tiles
-    errorTileUrl: '',
-    // Enhanced caching
-    crossOrigin: true,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-}).addTo(map);
+    const map = L.map('map', {
+      maxZoom: 22,
+      minZoom: 1,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 60,
+      bounceAtZoomLimits: false,
+      preferCanvas: true,
+      renderer: L.canvas(),
+      // iOS specific options
+      tap: true,
+      touchZoom: 'center',
+      dragging: true,
+      // Performance options
+      fadeAnimation: false,
+      zoomAnimation: true,
+      markerZoomAnimation: true,
+      transform3DLimit: 2 ^ 30
+    }).setView([32.65322, -83.73808], 16);
 
-// Create streets layer with same options
-let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 22,
-    maxNativeZoom: 19,
-    noWrap: true,
-    detectRetina: true,
-    keepBuffer: 8,
-    updateWhenIdle: false,
-    updateWhenZooming: false,
-    preferCanvas: true,
-    // iOS-specific options
-    bounceAtZoomLimits: false,
-    touchZoom: 'center',
-    // Enhanced zoom settings
-    fadeAnimation: false,
-    zoomAnimation: true,
-    zoomSnap: 0.1,
-    zoomDelta: 0.5,
-    // Tile management
-    updateInterval: 0,
-    tileSize: 256,
-    // Force continuous world wrapping
-    continuousWorld: true,
-    // Prevent gray tiles
-    errorTileUrl: '',
-    // Enhanced caching
-    crossOrigin: true
-});
+    // Add satellite layer (default)
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 22,
+      maxNativeZoom: 19,
+      noWrap: true,
+      detectRetina: true,
+      // High-DPI specific options
+      reuseTiles: true,
+      tileSize: window.devicePixelRatio > 1 ? 512 : 256,
+      zoomOffset: window.devicePixelRatio > 1 ? -1 : 0,
+      // Performance options
+      keepBuffer: 16,
+      updateWhenIdle: false,
+      updateWhenZooming: false,
+      preferCanvas: true,
+      // iOS-specific options
+      bounceAtZoomLimits: false,
+      touchZoom: 'center',
+      // Enhanced zoom settings
+      fadeAnimation: false,
+      zoomAnimation: true,
+      zoomSnap: 0,
+      zoomDelta: 0.25,
+      // Prevent gray tiles
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      // Enhanced caching
+      crossOrigin: true,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    }).addTo(map);
+
+    // Create streets layer with same options
+    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 22,
+      maxNativeZoom: 19,
+      noWrap: true,
+      detectRetina: true,
+      keepBuffer: 8,
+      updateWhenIdle: false,
+      updateWhenZooming: false,
+      preferCanvas: true,
+      // iOS-specific options
+      bounceAtZoomLimits: false,
+      touchZoom: 'center',
+      // Enhanced zoom settings
+      fadeAnimation: false,
+      zoomAnimation: true,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
+      // Tile management
+      updateInterval: 0,
+      tileSize: 256,
+      // Force continuous world wrapping
+      continuousWorld: true,
+      // Prevent gray tiles
+      errorTileUrl: '',
+      // Enhanced caching
+      crossOrigin: true
+    });
 
     // Update map options
-map.options.smoothWheelZoom = true;
-map.options.wheelDebounceTime = 100;
-map.options.preferCanvas = true;
-    
+    map.options.smoothWheelZoom = true;
+    map.options.wheelDebounceTime = 100;
+    map.options.preferCanvas = true;
 
-// Initialize the FeatureGroup to store editable layers
-const drawnItems = new L.FeatureGroup();
-map.addLayer(drawnItems);
 
-// Configure the draw control
-const drawControl = new L.Control.Draw({
-  draw: {
-      marker: false,
-      circle: false,
-      circlemarker: false,
-      rectangle: false,
-      polygon: false,
-      polyline: {
+    // Initialize the FeatureGroup to store editable layers
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    // Configure the draw control
+    const drawControl = new L.Control.Draw({
+      draw: {
+        marker: false,
+        circle: false,
+        circlemarker: false,
+        rectangle: false,
+        polygon: false,
+        polyline: {
           shapeOptions: {
-              color: '#FFA500',  // Bright orange
-              weight: 3,         // Line weight
-              opacity: 1,
-              lineCap: 'round',
-              lineJoin: 'round'
+            color: '#FFA500',  // Bright orange
+            weight: 3,         // Line weight
+            opacity: 1,
+            lineCap: 'round',
+            lineJoin: 'round'
           },
           metric: false,
           feet: true,
           showLength: true,
           guidelineDistance: 5,
           vertices: {
-              first: {
-                  icon: new L.DivIcon({
-                      className: 'leaflet-div-icon',
-                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
-                  })
-              },
-              mid: {
-                  icon: new L.DivIcon({
-                      className: 'leaflet-div-icon',
-                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
-                  })
-              },
-              last: {
-                  icon: new L.DivIcon({
-                      className: 'leaflet-div-icon',
-                      html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
-                  })
-              }
+            first: {
+              icon: new L.DivIcon({
+                className: 'leaflet-div-icon',
+                html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+              })
+            },
+            mid: {
+              icon: new L.DivIcon({
+                className: 'leaflet-div-icon',
+                html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+              })
+            },
+            last: {
+              icon: new L.DivIcon({
+                className: 'leaflet-div-icon',
+                html: '<div style="width: 6px; height: 6px; background-color: #FFA500; border-radius: 50%; border: 1px solid white;"></div>'
+              })
+            }
           }
+        }
+      },
+      edit: {
+        featureGroup: drawnItems,
+        remove: true
       }
-  },
-  edit: {
-      featureGroup: drawnItems,
-      remove: true
-  }
-});
-map.addControl(drawControl);
+    });
+    map.addControl(drawControl);
 
-// Handle created measurements
-map.on('draw:created', function(e) {
-    const layer = e.layer;
-    drawnItems.addLayer(layer);
-    
-    // Calculate and display measurement
-    if (layer instanceof L.Polyline) {
+    // Handle created measurements
+    map.on('draw:created', function (e) {
+      const layer = e.layer;
+      drawnItems.addLayer(layer);
+
+      // Calculate and display measurement
+      if (layer instanceof L.Polyline) {
         const distanceInFeet = calculateDistanceInFeet(layer);
         layer.bindPopup(`Distance: ${distanceInFeet.toFixed(2)} feet`).openPopup();
-    }
-});
+      }
+    });
 
-// Calculate distance in feet
-function calculateDistanceInFeet(layer) {
-    const latlngs = layer.getLatLngs();
-    let totalDistance = 0;
-    
-    for (let i = 1; i < latlngs.length; i++) {
-        totalDistance += latlngs[i-1].distanceTo(latlngs[i]);
-    }
-    
-    // Convert meters to feet (1 meter = 3.28084 feet)
-    return totalDistance * 3.28084;
-}
+    // Calculate distance in feet
+    function calculateDistanceInFeet(layer) {
+      const latlngs = layer.getLatLngs();
+      let totalDistance = 0;
 
-// Remove old measurement handlers if they exist
-map.off('measurestart');
-map.off('measurefinish');
-map.off('measurestop');
+      for (let i = 1; i < latlngs.length; i++) {
+        totalDistance += latlngs[i - 1].distanceTo(latlngs[i]);
+      }
+
+      // Convert meters to feet (1 meter = 3.28084 feet)
+      return totalDistance * 3.28084;
+    }
+
+    // Remove old measurement handlers if they exist
+    map.off('measurestart');
+    map.off('measurefinish');
+    map.off('measurestop');
 
 
 
@@ -520,8 +561,8 @@ map.off('measurestop');
     let treesRotated = [];
     let baseLat = 32.65322;
     let baseLng = -83.73808;
-    
-    
+
+
 
 
 
@@ -532,7 +573,7 @@ map.off('measurestop');
     let isTracking = false;
     let locationHistory = [];
     let locationHistoryLayer = L.layerGroup().addTo(map);
-    
+
     // Get DOM elements
     const sidebar = document.getElementById('sidebar');
     const toggleSidebarBtn = document.getElementById('toggle_sidebar');
@@ -562,204 +603,204 @@ map.off('measurestop');
     const moveDownBtn = document.getElementById('move_down');
     const moveLeftBtn = document.getElementById('move_left');
     const moveRightBtn = document.getElementById('move_right');
-    
-// Get location source select element
-const locationSource = document.getElementById('location_source');
 
-// Modified startLocationTracking function
-function startLocationTracking() {
-    if (isTracking) return;
-    
-    // Reset tracking state
-    isTracking = true;
-    locationHistory = [];
-    locationHistoryLayer.clearLayers();
-    
-    // Update UI
-    trackLocationBtn.style.display = 'none';
-    stopTrackingBtn.style.display = 'block';
-    trackLocationBtn.classList.add('tracking-active');
-    
-    const interval = parseInt(trackingIntervalInput.value) * 1000;
-    
-    if (locationSource.value === 'browser') {
+    // Get location source select element
+    const locationSource = document.getElementById('location_source');
+
+    // Modified startLocationTracking function
+    function startLocationTracking() {
+      if (isTracking) return;
+
+      // Reset tracking state
+      isTracking = true;
+      locationHistory = [];
+      locationHistoryLayer.clearLayers();
+
+      // Update UI
+      trackLocationBtn.style.display = 'none';
+      stopTrackingBtn.style.display = 'block';
+      trackLocationBtn.classList.add('tracking-active');
+
+      const interval = parseInt(trackingIntervalInput.value) * 1000;
+
+      if (locationSource.value === 'browser') {
         // Use browser's GPS
         locationStatus.textContent = "Using browser GPS...";
         startBrowserGPS(interval);
-    } else {
+      } else {
         // Use external GPS data that iOS is already receiving
         locationStatus.textContent = "Using external GPS...";
         startExternalGPS(interval);
+      }
     }
-}
 
-// Browser GPS function
-function startBrowserGPS(interval) {
-    if (!navigator.geolocation) {
+    // Browser GPS function
+    function startBrowserGPS(interval) {
+      if (!navigator.geolocation) {
         locationStatus.textContent = "Geolocation not supported";
         return;
-    }
-    
-    watchId = navigator.geolocation.watchPosition(
+      }
+
+      watchId = navigator.geolocation.watchPosition(
         handlePositionUpdate,
         handleLocationError,
         {
-            enableHighAccuracy: true,
-            timeout: interval,
-            maximumAge: 0
+          enableHighAccuracy: true,
+          timeout: interval,
+          maximumAge: 0
         }
-    );
-}
+      );
+    }
 
-// External GPS function - uses iOS location services
-function startExternalGPS(interval) {
-    // Request iOS location permission with external GPS option
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
+    // External GPS function - uses iOS location services
+    function startExternalGPS(interval) {
+      // Request iOS location permission with external GPS option
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
-        
+
         DeviceOrientationEvent.requestPermission()
-            .then(response => {
-                if (response === 'granted') {
-                    watchId = navigator.geolocation.watchPosition(
-                        handlePositionUpdate,
-                        handleLocationError,
-                        {
-                            enableHighAccuracy: true,
-                            timeout: interval,
-                            maximumAge: 0
-                        }
-                    );
+          .then(response => {
+            if (response === 'granted') {
+              watchId = navigator.geolocation.watchPosition(
+                handlePositionUpdate,
+                handleLocationError,
+                {
+                  enableHighAccuracy: true,
+                  timeout: interval,
+                  maximumAge: 0
                 }
-            })
-            .catch(console.error);
-    } else {
+              );
+            }
+          })
+          .catch(console.error);
+      } else {
         // Fall back to browser GPS if iOS-specific API is not available
         startBrowserGPS(interval);
+      }
     }
-}
 
-// Unified position update handler
-function handlePositionUpdate(position) {
-  // Update last GPS data time
-  lastUpdateTime = Date.now();
+    // Unified position update handler
+    function handlePositionUpdate(position) {
+      // Update last GPS data time
+      lastUpdateTime = Date.now();
 
-  const { lat, lng, accuracy } = updateLocationDisplay(position);
-  updateLocationMarker(lat, lng, accuracy);
-  
-  // Update GPS status
-  const gpsSource = document.getElementById('gps_source');
-  const gpsSignal = document.getElementById('gps_signal');
-  const gpsAge = document.getElementById('gps_age');
-  
-  // Determine GPS source
-  if (locationSource.value === 'external') {
-      gpsSource.textContent = 'External GPS';
-      gpsSource.className = 'gps-active';
-  } else {
-      gpsSource.textContent = 'Browser GPS';
-      gpsSource.className = 'gps-active';
-  }
+      const { lat, lng, accuracy } = updateLocationDisplay(position);
+      updateLocationMarker(lat, lng, accuracy);
 
-  // Check signal quality based on accuracy
-  if (accuracy <= 5) {
-      gpsSignal.textContent = 'Excellent';
-      gpsSignal.className = 'gps-active';
-  } else if (accuracy <= 10) {
-      gpsSignal.textContent = 'Good';
-      gpsSignal.className = 'gps-active';
-  } else if (accuracy <= 20) {
-      gpsSignal.textContent = 'Fair';
-      gpsSignal.className = 'gps-active';
-  } else {
-      gpsSignal.textContent = 'Poor';
-      gpsSignal.className = 'gps-inactive';
-  }
+      // Update GPS status
+      const gpsSource = document.getElementById('gps_source');
+      const gpsSignal = document.getElementById('gps_signal');
+      const gpsAge = document.getElementById('gps_age');
 
-  // Calculate and display data age
-  const timestamp = position.timestamp ? position.timestamp : Date.now();
-  const age = Date.now() - timestamp;
-  gpsAge.textContent = age < 1000 ? 'Current' : Math.round(age/1000) + 's ago';
-  gpsAge.className = age < 2000 ? 'gps-active' : 'gps-inactive';
+      // Determine GPS source
+      if (locationSource.value === 'external') {
+        gpsSource.textContent = 'External GPS';
+        gpsSource.className = 'gps-active';
+      } else {
+        gpsSource.textContent = 'Browser GPS';
+        gpsSource.className = 'gps-active';
+      }
 
-  if (locationHistory.length === 0) {
-      baseLat = lat;
-      baseLng = lng;
-      map.setView([lat, lng], 18);
-  }
-}
-let lastUpdateTime = Date.now();
-const GPS_TIMEOUT = 5000; // 5 seconds
+      // Check signal quality based on accuracy
+      if (accuracy <= 5) {
+        gpsSignal.textContent = 'Excellent';
+        gpsSignal.className = 'gps-active';
+      } else if (accuracy <= 10) {
+        gpsSignal.textContent = 'Good';
+        gpsSignal.className = 'gps-active';
+      } else if (accuracy <= 20) {
+        gpsSignal.textContent = 'Fair';
+        gpsSignal.className = 'gps-active';
+      } else {
+        gpsSignal.textContent = 'Poor';
+        gpsSignal.className = 'gps-inactive';
+      }
 
-function checkGPSStatus() {
-  const gpsSource = document.getElementById('gps_source');
-  const gpsSignal = document.getElementById('gps_signal');
-  const gpsAge = document.getElementById('gps_age');
-  
-  if (isTracking) {
-      const timeSinceLastUpdate = Date.now() - lastUpdateTime;
-      if (timeSinceLastUpdate > GPS_TIMEOUT) {
+      // Calculate and display data age
+      const timestamp = position.timestamp ? position.timestamp : Date.now();
+      const age = Date.now() - timestamp;
+      gpsAge.textContent = age < 1000 ? 'Current' : Math.round(age / 1000) + 's ago';
+      gpsAge.className = age < 2000 ? 'gps-active' : 'gps-inactive';
+
+      if (locationHistory.length === 0) {
+        baseLat = lat;
+        baseLng = lng;
+        map.setView([lat, lng], 18);
+      }
+    }
+    let lastUpdateTime = Date.now();
+    const GPS_TIMEOUT = 5000; // 5 seconds
+
+    function checkGPSStatus() {
+      const gpsSource = document.getElementById('gps_source');
+      const gpsSignal = document.getElementById('gps_signal');
+      const gpsAge = document.getElementById('gps_age');
+
+      if (isTracking) {
+        const timeSinceLastUpdate = Date.now() - lastUpdateTime;
+        if (timeSinceLastUpdate > GPS_TIMEOUT) {
           gpsSource.textContent = 'No Data';
           gpsSource.className = 'gps-inactive';
           gpsSignal.textContent = 'No Fix';
           gpsSignal.className = 'gps-inactive';
           gpsAge.textContent = 'Timeout';
           gpsAge.className = 'gps-inactive';
+        }
+      } else {
+        // Not tracking, show inactive state
+        gpsSource.textContent = 'Not Tracking';
+        gpsSource.className = 'gps-inactive';
+        gpsSignal.textContent = 'Inactive';
+        gpsSignal.className = 'gps-inactive';
+        gpsAge.textContent = '-';
+        gpsAge.className = 'gps-inactive';
       }
-  } else {
-      // Not tracking, show inactive state
-      gpsSource.textContent = 'Not Tracking';
-      gpsSource.className = 'gps-inactive';
-      gpsSignal.textContent = 'Inactive';
-      gpsSignal.className = 'gps-inactive';
-      gpsAge.textContent = '-';
-      gpsAge.className = 'gps-inactive';
-  }
-}
+    }
 
-// Start GPS status monitoring
-setInterval(checkGPSStatus, 1000);
+    // Start GPS status monitoring
+    setInterval(checkGPSStatus, 1000);
 
     // Toggle sidebar function
     function toggleSidebar() {
       sidebar.classList.toggle('collapsed');
       toggleSidebarBtn.classList.toggle('collapsed');
       toggleIcon.classList.toggle('collapsed');
-      
+
       // Change toggle icon
       if (toggleIcon.classList.contains('collapsed')) {
         toggleIcon.innerHTML = '►';
       } else {
         toggleIcon.innerHTML = '◄';
       }
-      
+
       // Force map to resize immediately
       map.invalidateSize(false);
     }
-    
+
     // Function to get current time as string
     function getCurrentTimeString() {
       const now = new Date();
       return now.toLocaleTimeString();
     }
-    
+
     // Function to update location display
     function updateLocationDisplay(position) {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       const accuracy = position.coords.accuracy;
-      
+
       // Update location badge
       currentLat.textContent = lat.toFixed(6);
       currentLng.textContent = lng.toFixed(6);
       currentAccuracy.textContent = Math.round(accuracy);
       lastUpdate.textContent = getCurrentTimeString();
-      
+
       // Show location badge if not already visible
       locationBadge.style.display = 'block';
-      
+
       return { lat, lng, accuracy };
     }
-    
+
     // Function to update location marker
     function updateLocationMarker(lat, lng, accuracy) {
       // If we already have a marker, remove it
@@ -769,7 +810,7 @@ setInterval(checkGPSStatus, 1000);
       if (userLocationCircle) {
         map.removeLayer(userLocationCircle);
       }
-      
+
       // Add a marker at the user's location
       userLocationMarker = L.circleMarker([lat, lng], {
         radius: 8,
@@ -778,7 +819,7 @@ setInterval(checkGPSStatus, 1000);
         fillOpacity: 1,
         weight: 2
       }).addTo(map);
-      
+
       // Add a circle showing accuracy
       userLocationCircle = L.circle([lat, lng], {
         radius: accuracy,
@@ -787,12 +828,12 @@ setInterval(checkGPSStatus, 1000);
         fillOpacity: 0.15,
         weight: 1
       }).addTo(map);
-      
+
       // Update location history
       if (isTracking) {
         // Add point to location history
         locationHistory.push([lat, lng]);
-        
+
         // Update location history path
         locationHistoryLayer.clearLayers();
         L.polyline(locationHistory, {
@@ -801,40 +842,40 @@ setInterval(checkGPSStatus, 1000);
           opacity: 0.7
         }).addTo(locationHistoryLayer);
       }
-      
+
       // Center map if follow mode is enabled
       if (isTracking && followModeSelect.value === 'yes') {
         map.setView([lat, lng]);
       }
     }
-    
+
     // Function to get user's current location once
     function getUserLocation() {
       locationStatus.textContent = "Requesting your location...";
-      
+
       if (!navigator.geolocation) {
         locationStatus.textContent = "Geolocation is not supported by your browser";
         return;
       }
-      
+
       navigator.geolocation.getCurrentPosition(
         // Success callback
-        function(position) {
+        function (position) {
           const { lat, lng, accuracy } = updateLocationDisplay(position);
           locationStatus.textContent = `Location found! Accuracy: ${Math.round(accuracy)} meters`;
-          
+
           // Update location marker
           updateLocationMarker(lat, lng, accuracy);
-          
+
           // Center map on user's location
           map.setView([lat, lng], 18);
-          
+
           // Update base coordinates for tree generation
           baseLat = lat;
           baseLng = lng;
         },
         // Error callback
-        function(error) {
+        function (error) {
           handleLocationError(error);
         },
         // Options
@@ -845,10 +886,10 @@ setInterval(checkGPSStatus, 1000);
         }
       );
     }
-    
+
     // Function to handle location errors
     function handleLocationError(error) {
-      switch(error.code) {
+      switch (error.code) {
         case error.PERMISSION_DENIED:
           locationStatus.textContent = "User denied the request for Geolocation";
           break;
@@ -863,40 +904,40 @@ setInterval(checkGPSStatus, 1000);
           break;
       }
     }
-    
+
     // Function to start continuous location tracking
     function startLocationTracking() {
       if (isTracking) return;
-          // Initialize GPS status
-    const gpsSource = document.getElementById('gps_source');
-    const gpsSignal = document.getElementById('gps_signal');
-    const gpsAge = document.getElementById('gps_age');
-    
-    gpsSource.textContent = 'Connecting...';
-    gpsSignal.textContent = 'Waiting';
-    gpsAge.textContent = '-';
+      // Initialize GPS status
+      const gpsSource = document.getElementById('gps_source');
+      const gpsSignal = document.getElementById('gps_signal');
+      const gpsAge = document.getElementById('gps_age');
+
+      gpsSource.textContent = 'Connecting...';
+      gpsSignal.textContent = 'Waiting';
+      gpsAge.textContent = '-';
       if (!navigator.geolocation) {
         locationStatus.textContent = "Geolocation is not supported by your browser";
         return;
       }
-      
+
       // Start tracking
       isTracking = true;
       locationHistory = []; // Reset location history
       locationHistoryLayer.clearLayers();
-      
+
       // Update UI
       trackLocationBtn.style.display = 'none';
       stopTrackingBtn.style.display = 'block';
       trackLocationBtn.classList.add('tracking-active');
       locationStatus.textContent = "GPS tracking active...";
-      
+
       // Get tracking interval from input
       const interval = parseInt(trackingIntervalInput.value) * 1000; // Convert to milliseconds
-      
+
       // Get initial position
       navigator.geolocation.getCurrentPosition(
-        function(position) {
+        function (position) {
           const { lat, lng, accuracy } = updateLocationDisplay(position);
           updateLocationMarker(lat, lng, accuracy);
           map.setView([lat, lng], 18);
@@ -906,14 +947,14 @@ setInterval(checkGPSStatus, 1000);
         handleLocationError,
         { enableHighAccuracy: true }
       );
-      
+
       // Set up continuous tracking
       watchId = navigator.geolocation.watchPosition(
         // Success callback
-        function(position) {
+        function (position) {
           const { lat, lng, accuracy } = updateLocationDisplay(position);
           updateLocationMarker(lat, lng, accuracy);
-          
+
           // Update base coordinates for tree generation if tracking is being used as a reference
           if (locationHistory.length === 1) { // First update after initial position
             baseLat = lat;
@@ -930,53 +971,53 @@ setInterval(checkGPSStatus, 1000);
         }
       );
     }
-    
+
     // Function to stop location tracking
     function stopLocationTracking() {
       if (!isTracking) return;
-      
+
       // Stop tracking
       isTracking = false;
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-      
+
       // Update UI
       trackLocationBtn.style.display = 'block';
       stopTrackingBtn.style.display = 'none';
       trackLocationBtn.classList.remove('tracking-active');
       locationStatus.textContent = "GPS tracking stopped. Track has been preserved.";
     }
-    
+
     // Function to convert feet to degrees based on latitude
     function ftToDeg(feet, lat) {
       // At the equator, 1 degree of latitude ≈ 364,000 feet
       const latDeg = feet / 364000;
-      
+
       // At the equator, 1 degree of longitude ≈ 364,000 feet
       // Adjust by cosine of latitude
       const lngDeg = feet / (364000 * Math.cos(lat * Math.PI / 180));
-      
+
       return { lat: latDeg, lng: lngDeg };
     }
-    
+
     // Function to generate trees
     function generateTrees() {
       console.log("Generating trees...");
-      
+
       // Clear existing markers
       treeMarkers.clearLayers();
-      
+
       const treeSpacing = parseFloat(treeSpacingInput.value);
       const rowSpacing = parseFloat(rowSpacingInput.value);
       const numRows = parseInt(numRowsInput.value);
       const treesPerRow = parseInt(treesPerRowInput.value);
       const rotation = parseFloat(rotationInput.value);
-      
+
       console.log(`Tree spacing: ${treeSpacing}, Row spacing: ${rowSpacing}`);
       console.log(`Rows: ${numRows}, Trees per row: ${treesPerRow}, Rotation: ${rotation}`);
-      
+
       // Generate base tree coordinates (before rotation)
       trees = [];
       for (let row = 0; row < numRows; row++) {
@@ -987,72 +1028,72 @@ setInterval(checkGPSStatus, 1000);
           });
         }
       }
-      
+
       console.log(`Generated ${trees.length} tree positions`);
-      
+
       // Get map center for base positioning if not tracking
       if (!isTracking || locationHistory.length === 0) {
         const mapCenter = map.getCenter();
         baseLat = mapCenter.lat;
         baseLng = mapCenter.lng;
       }
-      
+
       // Apply rotation and place trees
       treesRotated = [];
       updateTreePositions(0, 0, rotation, true);
     }
-    
+
     // Function to update tree positions
     function updateTreePositions(dx = 0, dy = 0, dangle = 0, isNewGeneration = false) {
       // Get current angle
       let currentAngle = isNewGeneration ? 0 : parseFloat(rotationInput.value);
       let newAngle = currentAngle + dangle;
-      
+
       // Update rotation input if angle changed
       if (dangle !== 0) {
         rotationInput.value = newAngle;
       }
-      
+
       // Clear existing markers
       treeMarkers.clearLayers();
-      
+
       // Get map center for calculations
       const treeColor = treeColorSelect.value;
-      
+
       // Conversion factor based on latitude
       const degConversion = ftToDeg(1, baseLat);
-      
+
       // Calculate rotated positions
       treesRotated = trees.map(tree => {
         // Apply translation if not a new generation
         let xPos = tree.x;
         let yPos = tree.y;
-        
+
         if (!isNewGeneration && treesRotated.length > 0) {
           // If we already have rotated trees, adjust from previous positions
           xPos = tree.x + dx;
           yPos = tree.y + dy;
-          
+
           // Update the base tree positions for future movements
           tree.x = xPos;
           tree.y = yPos;
         }
-        
+
         // Apply rotation
         const angleRad = newAngle * Math.PI / 180;
         const xRot = xPos * Math.cos(angleRad) - yPos * Math.sin(angleRad);
         const yRot = xPos * Math.sin(angleRad) + yPos * Math.cos(angleRad);
-        
+
         // Convert to lat/lng
         const lat = baseLat + yRot * degConversion.lat;
         const lng = baseLng + xRot * degConversion.lng;
-        
+
         return {
           lat: lat,
           lng: lng
         };
       });
-      
+
       // Add markers to map
       treesRotated.forEach(tree => {
         L.circleMarker([tree.lat, tree.lng], {
@@ -1063,55 +1104,55 @@ setInterval(checkGPSStatus, 1000);
           stroke: false
         }).addTo(treeMarkers);
       });
-      
+
       console.log(`Updated ${treesRotated.length} tree positions`);
     }
-    
+
     // Event listeners
     toggleSidebarBtn.addEventListener('click', toggleSidebar);
-    
-    generateBtn.addEventListener('click', function() {
+
+    generateBtn.addEventListener('click', function () {
       console.log("Generate button clicked");
       generateTrees();
     });
-    
-    locationBtn.addEventListener('click', function() {
+
+    locationBtn.addEventListener('click', function () {
       getUserLocation();
     });
-    
-    trackLocationBtn.addEventListener('click', function() {
+
+    trackLocationBtn.addEventListener('click', function () {
       startLocationTracking();
     });
-    
-    stopTrackingBtn.addEventListener('click', function() {
+
+    stopTrackingBtn.addEventListener('click', function () {
       stopLocationTracking();
     });
-    
-    rotateLeftBtn.addEventListener('click', function() {
+
+    rotateLeftBtn.addEventListener('click', function () {
       updateTreePositions(0, 0, -1);
     });
-    
-    rotateRightBtn.addEventListener('click', function() {
+
+    rotateRightBtn.addEventListener('click', function () {
       updateTreePositions(0, 0, 1);
     });
-    
-    moveUpBtn.addEventListener('click', function() {
+
+    moveUpBtn.addEventListener('click', function () {
       updateTreePositions(0, 10, 0);
     });
-    
-    moveDownBtn.addEventListener('click', function() {
+
+    moveDownBtn.addEventListener('click', function () {
       updateTreePositions(0, -10, 0);
     });
-    
-    moveLeftBtn.addEventListener('click', function() {
+
+    moveLeftBtn.addEventListener('click', function () {
       updateTreePositions(-10, 0, 0);
     });
-    
-    moveRightBtn.addEventListener('click', function() {
+
+    moveRightBtn.addEventListener('click', function () {
       updateTreePositions(10, 0, 0);
     });
-    
-    mapTypeSelect.addEventListener('change', function() {
+
+    mapTypeSelect.addEventListener('change', function () {
       const mapType = mapTypeSelect.value;
       if (mapType === 'satellite') {
         map.removeLayer(streetsLayer);
@@ -1121,32 +1162,33 @@ setInterval(checkGPSStatus, 1000);
         streetsLayer.addTo(map);
       }
     });
-    
+
     // Handle tracking interval changes
-    trackingIntervalInput.addEventListener('change', function() {
+    trackingIntervalInput.addEventListener('change', function () {
       if (isTracking) {
         // Restart tracking with new interval
         stopLocationTracking();
         startLocationTracking();
       }
     });
-    
+
     // Ensure map responsiveness on window resize
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
       map.invalidateSize(false);
     });
-    
+
     // Generate initial trees when the page loads
-    window.onload = function() {
+    window.onload = function () {
       console.log("Page loaded");
       setTimeout(generateTrees, 500); // Delay to ensure map is fully loaded
     };
-    locationSource.addEventListener('change', function() {
+    locationSource.addEventListener('change', function () {
       if (isTracking) {
-          stopLocationTracking();
-          startLocationTracking();
+        stopLocationTracking();
+        startLocationTracking();
       }
-  });
+    });
   </script>
 </body>
+
 </html>
