@@ -826,7 +826,7 @@
       // Update location badge
       currentLat.textContent = lat.toFixed(6);
       currentLng.textContent = lng.toFixed(6);
-      currentAccuracy.textContent = Math.round(accuracy);
+      currentAccuracy.textContent = accuracy.toFixed(2);
       lastUpdate.textContent = getCurrentTimeString();
 
       // Show location badge if not already visible
