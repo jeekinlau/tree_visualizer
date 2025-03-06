@@ -339,88 +339,89 @@
   </div>
 
   <script>
-    // Initialize map
-    const map = L.map('map', {
-      maxZoom: 22,
-      minZoom: 1,
-      zoomSnap: 0.1,
-      zoomDelta: 0.5,
-      wheelDebounceTime: 40,
-      wheelPxPerZoomLevel: 60,
-      bounceAtZoomLimits: false,
-      preferCanvas: true,
-      renderer: L.canvas(),
-      // iOS specific options
-      tap: true,
-      touchZoom: 'center',
-      dragging: true,
-      // Performance options
-      fadeAnimation: false,
-      zoomAnimation: true,
-      markerZoomAnimation: true,
-      transform3DLimit: 2^30
-  }).setView([32.65322, -83.73808], 16);
+    // Update the map initialization
+
+const map = L.map('map', {
+    maxZoom: 22,
+    minZoom: 1,
+    zoomSnap: 0.1,
+    zoomDelta: 0.5,
+    wheelDebounceTime: 40,
+    wheelPxPerZoomLevel: 60,
+    bounceAtZoomLimits: false,
+    preferCanvas: true,
+    renderer: L.canvas(),
+    // iOS specific options
+    tap: true,
+    touchZoom: 'center',
+    dragging: true,
+    // Performance options
+    fadeAnimation: false,
+    zoomAnimation: true,
+    markerZoomAnimation: true,
+    transform3DLimit: 2^30
+}).setView([32.65322, -83.73808], 16);
     
     // Add satellite layer (default)
-    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-      maxZoom: 22,
-      maxNativeZoom: 19,
-      noWrap: true,
-      detectRetina: true,
-      keepBuffer: 8,
-      updateWhenIdle: false,
-      updateWhenZooming: false,
-      preferCanvas: true,
-      // iOS-specific options
-      bounceAtZoomLimits: false,
-      touchZoom: 'center',
-      // Enhanced zoom settings
-      fadeAnimation: false,
-      zoomAnimation: true,
-      zoomSnap: 0.1,
-      zoomDelta: 0.5,
-      // Tile management
-      updateInterval: 0,
-      tileSize: 256,
-      // Force continuous world wrapping
-      continuousWorld: true,
-      // Prevent gray tiles
-      errorTileUrl: '',
-      // Enhanced caching
-      crossOrigin: true,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    }).addTo(map);
-    
-    // Create streets layer
-    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 22,
-      maxNativeZoom: 19,
-      noWrap: true,
-      detectRetina: true,
-      keepBuffer: 8,
-      updateWhenIdle: false,
-      updateWhenZooming: false,
-      preferCanvas: true,
-      // iOS-specific options
-      bounceAtZoomLimits: false,
-      touchZoom: 'center',
-      // Enhanced zoom settings
-      fadeAnimation: false,
-      zoomAnimation: true,
-      zoomSnap: 0.1,
-      zoomDelta: 0.5,
-      // Tile management
-      updateInterval: 0,
-      tileSize: 256,
-      // Force continuous world wrapping
-      continuousWorld: true,
-      // Prevent gray tiles
-      errorTileUrl: '',
-      // Enhanced caching
-      crossOrigin: true
-    });
+let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    noWrap: true,
+    detectRetina: true,
+    keepBuffer: 8,
+    updateWhenIdle: false,
+    updateWhenZooming: false,
+    preferCanvas: true,
+    // iOS-specific options
+    bounceAtZoomLimits: false,
+    touchZoom: 'center',
+    // Enhanced zoom settings
+    fadeAnimation: false,
+    zoomAnimation: true,
+    zoomSnap: 0.1,
+    zoomDelta: 0.5,
+    // Tile management
+    updateInterval: 0,
+    tileSize: 256,
+    // Force continuous world wrapping
+    continuousWorld: true,
+    // Prevent gray tiles
+    errorTileUrl: '',
+    // Enhanced caching
+    crossOrigin: true,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+}).addTo(map);
+
+// Create streets layer with same options
+let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    noWrap: true,
+    detectRetina: true,
+    keepBuffer: 8,
+    updateWhenIdle: false,
+    updateWhenZooming: false,
+    preferCanvas: true,
+    // iOS-specific options
+    bounceAtZoomLimits: false,
+    touchZoom: 'center',
+    // Enhanced zoom settings
+    fadeAnimation: false,
+    zoomAnimation: true,
+    zoomSnap: 0.1,
+    zoomDelta: 0.5,
+    // Tile management
+    updateInterval: 0,
+    tileSize: 256,
+    // Force continuous world wrapping
+    continuousWorld: true,
+    // Prevent gray tiles
+    errorTileUrl: '',
+    // Enhanced caching
+    crossOrigin: true
+});
 
     // Update map options
 map.options.smoothWheelZoom = true;
