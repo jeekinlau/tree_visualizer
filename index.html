@@ -321,39 +321,58 @@
       maxNativeZoom: 19,
       noWrap: true,
       detectRetina: true,
-      keepBuffer: 4,
+      keepBuffer: 8,
       updateWhenIdle: false,
       updateWhenZooming: false,
       preferCanvas: true,
-      // Add iOS-specific options
+      // iOS-specific options
       bounceAtZoomLimits: false,
       touchZoom: 'center',
-      pinchZoom: true,
-      // Improve tile loading behavior
-      updateInterval: 100,
-      zoomSnap: 0,
-      zoomDelta: 1
+      // Enhanced zoom settings
+      fadeAnimation: false,
+      zoomAnimation: true,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
+      // Tile management
+      updateInterval: 0,
+      tileSize: 256,
+      // Force continuous world wrapping
+      continuousWorld: true,
+      // Prevent gray tiles
+      errorTileUrl: '',
+      // Enhanced caching
+      crossOrigin: true,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
     
     // Create streets layer
-let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 22,
-    maxNativeZoom: 19,
-    noWrap: true,
-    detectRetina: true,
-    keepBuffer: 4,
-    updateWhenIdle: false,
-    updateWhenZooming: false,
-    preferCanvas: true,
-    // Add iOS-specific options
-    bounceAtZoomLimits: false,
-    touchZoom: 'center',
-    pinchZoom: true,
-    // Improve tile loading behavior
-    updateInterval: 100,
-    zoomSnap: 0,
-    zoomDelta: 1
+    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 22,
+      maxNativeZoom: 19,
+      noWrap: true,
+      detectRetina: true,
+      keepBuffer: 8,
+      updateWhenIdle: false,
+      updateWhenZooming: false,
+      preferCanvas: true,
+      // iOS-specific options
+      bounceAtZoomLimits: false,
+      touchZoom: 'center',
+      // Enhanced zoom settings
+      fadeAnimation: false,
+      zoomAnimation: true,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
+      // Tile management
+      updateInterval: 0,
+      tileSize: 256,
+      // Force continuous world wrapping
+      continuousWorld: true,
+      // Prevent gray tiles
+      errorTileUrl: '',
+      // Enhanced caching
+      crossOrigin: true
     });
 
     // Update map options
