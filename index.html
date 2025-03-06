@@ -158,6 +158,10 @@
       background-color: #4CAF50 !important;
       animation: pulse 2s infinite;
     }
+    #location_source {
+      margin-bottom: 15px;
+      width: 100%;
+    }
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.7; }
@@ -221,6 +225,16 @@
       <button id="stop_tracking_btn">Stop GPS Tracking</button>
       <div id="location_status"></div>
       
+      <!-- Add after the existing GPS buttons -->
+      <div class="input-group">
+        <label for="location_source">GPS Source:</label>
+        <select id="location_source">
+          <option value="browser">Browser GPS</option>
+          <option value="external">External GPS</option>
+        </select>
+      </div>
+
+
       <div class="input-group">
         <label for="follow_mode">Auto follow location:</label>
         <select id="follow_mode">
@@ -276,12 +290,12 @@
     let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri',
       maxZoom: 22,
-      maxNativeZoom: 19, // Maximum zoom level for which tiles are available
-      noWrap: true,
-      // Enable high-resolution displays
-      detectRetina: true,
-      // Keep showing the last available tile when zoomed past maxNativeZoom
-      keepBuffer: 4
+          maxNativeZoom: 19, // Maximum zoom level for which tiles are available
+    noWrap: true,
+    // Enable high-resolution displays
+    detectRetina: true,
+    // Keep showing the last available tile when zoomed past maxNativeZoom
+    keepBuffer: 4
     }).addTo(map);
     
     // Create streets layer
@@ -424,6 +438,93 @@ map.off('measurestop');
     const moveLeftBtn = document.getElementById('move_left');
     const moveRightBtn = document.getElementById('move_right');
     
+// Get location source select element
+const locationSource = document.getElementById('location_source');
+
+// Modified startLocationTracking function
+function startLocationTracking() {
+    if (isTracking) return;
+    
+    // Reset tracking state
+    isTracking = true;
+    locationHistory = [];
+    locationHistoryLayer.clearLayers();
+    
+    // Update UI
+    trackLocationBtn.style.display = 'none';
+    stopTrackingBtn.style.display = 'block';
+    trackLocationBtn.classList.add('tracking-active');
+    
+    const interval = parseInt(trackingIntervalInput.value) * 1000;
+    
+    if (locationSource.value === 'browser') {
+        // Use browser's GPS
+        locationStatus.textContent = "Using browser GPS...";
+        startBrowserGPS(interval);
+    } else {
+        // Use external GPS data that iOS is already receiving
+        locationStatus.textContent = "Using external GPS...";
+        startExternalGPS(interval);
+    }
+}
+
+// Browser GPS function
+function startBrowserGPS(interval) {
+    if (!navigator.geolocation) {
+        locationStatus.textContent = "Geolocation not supported";
+        return;
+    }
+    
+    watchId = navigator.geolocation.watchPosition(
+        handlePositionUpdate,
+        handleLocationError,
+        {
+            enableHighAccuracy: true,
+            timeout: interval,
+            maximumAge: 0
+        }
+    );
+}
+
+// External GPS function - uses iOS location services
+function startExternalGPS(interval) {
+    // Request iOS location permission with external GPS option
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+        
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    watchId = navigator.geolocation.watchPosition(
+                        handlePositionUpdate,
+                        handleLocationError,
+                        {
+                            enableHighAccuracy: true,
+                            timeout: interval,
+                            maximumAge: 0
+                        }
+                    );
+                }
+            })
+            .catch(console.error);
+    } else {
+        // Fall back to browser GPS if iOS-specific API is not available
+        startBrowserGPS(interval);
+    }
+}
+
+// Unified position update handler
+function handlePositionUpdate(position) {
+    const { lat, lng, accuracy } = updateLocationDisplay(position);
+    updateLocationMarker(lat, lng, accuracy);
+    
+    if (locationHistory.length === 0) {
+        baseLat = lat;
+        baseLng = lng;
+        map.setView([lat, lng], 18);
+    }
+}
+
     // Toggle sidebar function
     function toggleSidebar() {
       sidebar.classList.toggle('collapsed');
@@ -839,6 +940,12 @@ map.off('measurestop');
       console.log("Page loaded");
       setTimeout(generateTrees, 500); // Delay to ensure map is fully loaded
     };
+    locationSource.addEventListener('change', function() {
+      if (isTracking) {
+          stopLocationTracking();
+          startLocationTracking();
+      }
+  });
   </script>
 </body>
 </html>
