@@ -403,6 +403,12 @@
       transform3DLimit: 2 ^ 30
     }).setView([32.65322, -83.73808], 16);
 
+    // Detect display characteristics
+    const isRetina = window.devicePixelRatio > 1;
+    const tileSize = isRetina ? 512 : 256;
+    const zoomOffset = isRetina ? -1 : 0;
+
+
     // Add satellite layer (default)
     let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri',
@@ -431,7 +437,19 @@
       errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
       // Enhanced caching
       crossOrigin: true,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      tileSize: tileSize,
+      zoomOffset: zoomOffset,
+      // Add error handling for failed tiles
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      // Add loading event handlers
+      on: {
+        tileerror: function (e) {
+          console.log('Tile failed to load:', e);
+          // Retry loading the tile
+          e.tile.src = e.url;
+        }
+      }
     }).addTo(map);
 
     // Create streets layer with same options
@@ -607,6 +625,21 @@
     // Get location source select element
     const locationSource = document.getElementById('location_source');
 
+
+    // Validate required elements
+    if (!locationSource) {
+      console.error('Location source select element not found');
+      // Create default element
+      locationSource = document.createElement('select');
+      locationSource.id = 'location_source';
+      locationSource.innerHTML = `
+      <option value="browser">Browser GPS</option>
+      <option value="external">External GPS</option>
+  `;
+      // Add to sidebar
+      sidebar.appendChild(locationSource);
+    }
+
     // Modified startLocationTracking function
     function startLocationTracking() {
       if (isTracking) return;
@@ -653,28 +686,29 @@
     }
 
     // External GPS function - uses iOS location services
+    // Modify startExternalGPS function
+
     function startExternalGPS(interval) {
-      // Request iOS location permission with external GPS option
       if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
 
         DeviceOrientationEvent.requestPermission()
           .then(response => {
             if (response === 'granted') {
-              watchId = navigator.geolocation.watchPosition(
-                handlePositionUpdate,
-                handleLocationError,
-                {
-                  enableHighAccuracy: true,
-                  timeout: interval,
-                  maximumAge: 0
-                }
-              );
+              startGPSTracking(interval);
+            } else {
+              locationStatus.textContent = "Permission denied for external GPS";
+              stopLocationTracking();
             }
           })
-          .catch(console.error);
+          .catch(error => {
+            console.error('GPS Permission Error:', error);
+            locationStatus.textContent = "Error requesting GPS permission";
+            stopLocationTracking();
+            // Fall back to browser GPS
+            startBrowserGPS(interval);
+          });
       } else {
-        // Fall back to browser GPS if iOS-specific API is not available
         startBrowserGPS(interval);
       }
     }
@@ -905,72 +939,7 @@
       }
     }
 
-    // Function to start continuous location tracking
-    function startLocationTracking() {
-      if (isTracking) return;
-      // Initialize GPS status
-      const gpsSource = document.getElementById('gps_source');
-      const gpsSignal = document.getElementById('gps_signal');
-      const gpsAge = document.getElementById('gps_age');
 
-      gpsSource.textContent = 'Connecting...';
-      gpsSignal.textContent = 'Waiting';
-      gpsAge.textContent = '-';
-      if (!navigator.geolocation) {
-        locationStatus.textContent = "Geolocation is not supported by your browser";
-        return;
-      }
-
-      // Start tracking
-      isTracking = true;
-      locationHistory = []; // Reset location history
-      locationHistoryLayer.clearLayers();
-
-      // Update UI
-      trackLocationBtn.style.display = 'none';
-      stopTrackingBtn.style.display = 'block';
-      trackLocationBtn.classList.add('tracking-active');
-      locationStatus.textContent = "GPS tracking active...";
-
-      // Get tracking interval from input
-      const interval = parseInt(trackingIntervalInput.value) * 1000; // Convert to milliseconds
-
-      // Get initial position
-      navigator.geolocation.getCurrentPosition(
-        function (position) {
-          const { lat, lng, accuracy } = updateLocationDisplay(position);
-          updateLocationMarker(lat, lng, accuracy);
-          map.setView([lat, lng], 18);
-          baseLat = lat;
-          baseLng = lng;
-        },
-        handleLocationError,
-        { enableHighAccuracy: true }
-      );
-
-      // Set up continuous tracking
-      watchId = navigator.geolocation.watchPosition(
-        // Success callback
-        function (position) {
-          const { lat, lng, accuracy } = updateLocationDisplay(position);
-          updateLocationMarker(lat, lng, accuracy);
-
-          // Update base coordinates for tree generation if tracking is being used as a reference
-          if (locationHistory.length === 1) { // First update after initial position
-            baseLat = lat;
-            baseLng = lng;
-          }
-        },
-        // Error callback
-        handleLocationError,
-        // Options
-        {
-          enableHighAccuracy: true,
-          timeout: interval,
-          maximumAge: 0
-        }
-      );
-    }
 
     // Function to stop location tracking
     function stopLocationTracking() {
@@ -982,6 +951,18 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
+
+      // Clear GPS status
+      const gpsSource = document.getElementById('gps_source');
+      const gpsSignal = document.getElementById('gps_signal');
+      const gpsAge = document.getElementById('gps_age');
+
+      gpsSource.textContent = 'Not Tracking';
+      gpsSource.className = 'gps-inactive';
+      gpsSignal.textContent = 'Inactive';
+      gpsSignal.className = 'gps-inactive';
+      gpsAge.textContent = '-';
+      gpsAge.className = 'gps-inactive';
 
       // Update UI
       trackLocationBtn.style.display = 'block';
