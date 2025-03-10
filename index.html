@@ -365,6 +365,9 @@
           <li>Double-click to finish measurement</li>
         </ul>
       </div>
+      <button id="export_field" style="width: 100%; margin-top: 20px; background-color: #673AB7;">
+        Export Field Design
+      </button>
     </div>
 
     <button id="toggle_sidebar"><span class="toggle-icon">◄</span></button>
@@ -1169,6 +1172,212 @@
         startLocationTracking();
       }
     });
+
+document.getElementById('export_field').addEventListener('click', function() {
+    const fieldData = {
+        trees: treesRotated,
+        baseLat: baseLat,
+        baseLng: baseLng,
+        treeColor: treeColorSelect.value,
+        mapType: mapTypeSelect.value,
+        rotation: parseFloat(rotationInput.value)
+    };
+
+    // Update the script section of the exported content to include iOS support
+    const locationScript = `
+          let watchId = null;
+          let isTracking = false;
+
+          function startLocationTracking() {
+              if (!navigator.geolocation) {
+                  alert("Geolocation is not supported by your browser");
+                  return;
+              }
+
+              if (typeof DeviceOrientationEvent !== 'undefined' && 
+                  typeof DeviceOrientationEvent.requestPermission === 'function') {
+                  // iOS device
+                  DeviceOrientationEvent.requestPermission()
+                      .then(response => {
+                          if (response === 'granted') {
+                              startGPSTracking();
+                          } else {
+                              alert("Permission denied for GPS access");
+                          }
+                      })
+                      .catch(console.error);
+              } else {
+                  // Non-iOS device
+                  startGPSTracking();
+              }
+          }
+
+          function startGPSTracking() {
+              isTracking = true;
+              watchId = navigator.geolocation.watchPosition(
+                  updateLocation,
+                  function(error) {
+                      alert("Error getting location: " + error.message);
+                  },
+                  {
+                      enableHighAccuracy: true,
+                      timeout: 10000,
+                      maximumAge: 0
+                  }
+              );
+          }
+
+          function updateLocation(position) {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              const accuracy = position.coords.accuracy;
+              
+              document.getElementById('current_lat').textContent = lat.toFixed(6);
+              document.getElementById('current_lng').textContent = lng.toFixed(6);
+              document.getElementById('current_accuracy').textContent = accuracy.toFixed(2);
+              document.getElementById('last_update').textContent = new Date().toLocaleTimeString();
+              locationBadge.style.display = 'block';
+              
+              if (userLocationMarker) map.removeLayer(userLocationMarker);
+              if (userLocationCircle) map.removeLayer(userLocationCircle);
+              
+              userLocationMarker = L.circleMarker([lat, lng], {
+                  radius: 8,
+                  color: '#fff',
+                  fillColor: '#2196F3',
+                  fillOpacity: 1,
+                  weight: 2
+              }).addTo(map);
+              
+              userLocationCircle = L.circle([lat, lng], {
+                  radius: accuracy,
+                  color: '#2196F3',
+                  fillColor: '#2196F3',
+                  fillOpacity: 0.15,
+                  weight: 1
+              }).addTo(map);
+              
+              map.setView([lat, lng]);
+          }
+
+          // Start continuous tracking when the location button is clicked
+          locationBtn.addEventListener('click', function() {
+              if (!isTracking) {
+                  startLocationTracking();
+                  this.textContent = 'Stop Tracking';
+              } else {
+                  if (watchId !== null) {
+                      navigator.geolocation.clearWatch(watchId);
+                      watchId = null;
+                  }
+                  isTracking = false;
+                  this.textContent = 'Show My Location';
+              }
+          });
+    `;
+
+    // Update the export content with the new location functionality
+    const exportContent = `<!DOCTYPE html>
+    <html>
+    <head>
+        <title>Field Design View</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
+        <style>
+            body { margin: 0; padding: 0; }
+            #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+            .location-badge {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                background-color: rgba(255, 255, 255, 0.8);
+                padding: 8px 12px;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                z-index: 1000;
+                display: none;
+            }
+            .location-field { margin-bottom: 5px; }
+            .location-field span { font-weight: bold; }
+            #location_btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 1000;
+                background-color: #2196F3;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <button id="location_btn">Show My Location</button>
+        <div class="location-badge" id="location_badge">
+            <div class="location-field"><span>Lat:</span> <span id="current_lat">-</span></div>
+            <div class="location-field"><span>Lng:</span> <span id="current_lng">-</span></div>
+            <div class="location-field"><span>Acc:</span> <span id="current_accuracy">-</span> m</div>
+            <div class="location-field"><span>Last update:</span> <span id="last_update">-</span></div>
+        </div>
+        <script>
+            const fieldData = ${JSON.stringify(fieldData)};
+            const map = L.map('map').setView([fieldData.baseLat, fieldData.baseLng], 18);
+            
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 22,
+                attribution: 'Tiles &copy; Esri'
+            });
+            
+            const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 22,
+                attribution: '&copy; OpenStreetMap contributors'
+            });
+            
+            if (fieldData.mapType === 'satellite') {
+                satelliteLayer.addTo(map);
+            } else {
+                streetsLayer.addTo(map);
+            }
+            
+            // Add trees to map
+            fieldData.trees.forEach(tree => {
+                L.circleMarker([tree.lat, tree.lng], {
+                    radius: 3,
+                    color: fieldData.treeColor,
+                    fillColor: fieldData.treeColor,
+                    fillOpacity: 0.7,
+                    stroke: false
+                }).addTo(map);
+            });
+            
+            // Location functionality
+            const locationBtn = document.getElementById('location_btn');
+            const locationBadge = document.getElementById('location_badge');
+            let userLocationMarker = null;
+            let userLocationCircle = null;
+            
+            ${locationScript}
+        <\/script>
+    </body>
+    </html>`;
+
+    // Create and trigger download
+    const blob = new Blob([exportContent], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'field_design.html';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+});
+    
   </script>
 </body>
 
