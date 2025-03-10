@@ -1161,11 +1161,7 @@
       map.invalidateSize(false);
     });
 
-    // Generate initial trees when the page loads
-    window.onload = function () {
-      console.log("Page loaded");
-      setTimeout(generateTrees, 500); // Delay to ensure map is fully loaded
-    };
+
     locationSource.addEventListener('change', function () {
       if (isTracking) {
         stopLocationTracking();
