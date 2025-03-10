@@ -1326,18 +1326,88 @@ document.getElementById('export_field').addEventListener('click', function() {
         </div>
         <script>
             const fieldData = ${JSON.stringify(fieldData)};
-            const map = L.map('map').setView([fieldData.baseLat, fieldData.baseLng], 18);
             
+            // Detect display characteristics
+            const isRetina = window.devicePixelRatio > 1;
+            const tileSize = isRetina ? 512 : 256;
+            const zoomOffset = isRetina ? -1 : 0;
+            
+            // Initialize map with enhanced options
+            const map = L.map('map', {
+                maxZoom: 22,
+                minZoom: 1,
+                zoomSnap: 0.1,
+                zoomDelta: 0.5,
+                wheelDebounceTime: 40,
+                wheelPxPerZoomLevel: 60,
+                bounceAtZoomLimits: false,
+                preferCanvas: true,
+                renderer: L.canvas(),
+                // iOS specific options
+                tap: true,
+                touchZoom: 'center',
+                dragging: true,
+                // Performance options
+                fadeAnimation: false,
+                zoomAnimation: true,
+                markerZoomAnimation: true,
+                transform3DLimit: 2 ^ 30
+            }).setView([fieldData.baseLat, fieldData.baseLng], 18);
+            
+            // Add satellite layer with enhanced options
             const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
                 maxZoom: 22,
-                attribution: 'Tiles &copy; Esri'
+                maxNativeZoom: 19,
+                noWrap: true,
+                detectRetina: true,
+                // High-DPI specific options
+                reuseTiles: true,
+                tileSize: tileSize,
+                zoomOffset: zoomOffset,
+                // Performance options
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                updateWhenZooming: false,
+                preferCanvas: true,
+                // iOS-specific options
+                bounceAtZoomLimits: false,
+                touchZoom: 'center',
+                // Enhanced zoom settings
+                fadeAnimation: false,
+                zoomAnimation: true,
+                zoomSnap: 0,
+                zoomDelta: 0.25,
+                // Prevent gray tiles
+                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+                // Enhanced caching
+                crossOrigin: true,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             });
             
+            // Create streets layer with enhanced options
             const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 22,
-                attribution: '&copy; OpenStreetMap contributors'
+                maxNativeZoom: 19,
+                noWrap: true,
+                detectRetina: true,
+                keepBuffer: 8,
+                updateWhenIdle: false,
+                updateWhenZooming: false,
+                preferCanvas: true,
+                tileSize: tileSize,
+                zoomOffset: zoomOffset,
+                // iOS-specific options
+                bounceAtZoomLimits: false,
+                touchZoom: 'center',
+                // Prevent gray tiles
+                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+                // Enhanced caching
+                crossOrigin: true
             });
             
+            // Add the selected layer to the map
             if (fieldData.mapType === 'satellite') {
                 satelliteLayer.addTo(map);
             } else {
