@@ -27,17 +27,17 @@ In the left side bar, you can input the parameter of the field. Make sure your r
 
 You can also choose the colors of the dots representing the trees and what kind of map (satellite view is default)       
 <div align="center">
-<img src="./docs/colors_maptype.png" width="33%">
+<kbd><img src="./docs/colors_maptype.png" width="33%"></kbd>
 </div>
 
 You are able to move the orchard up, down, left, right, and then spin it clockwise and counter clockwise       
 <div align="center">
-<img src="./docs/move_orchard.png" width="33%">
+<kbd><img src="./docs/move_orchard.png" width="33%"></kbd>
 </div>
 
 After you have finished your orchard, you can export the data to an html file. This html file is a simplified verion of the webapp which will allow you to view the orchard in a browser. (Caution: only iOS browswer and html created can only be opened in microsoft edge on iOS).    
 <div align="center">
-<img src="./docs/export_html.png" width="33%">
+<kbd><img src="./docs/export_html.png" width="33%"></kbd>
 </div>
 
 ## Suggested workflow
@@ -49,7 +49,7 @@ After you have finished your orchard, you can export the data to an html file. T
 
 4. On the exported html file, click the "Show My Location" button. This will let you know your relative location to the trees you have designed.     
 <div align="center">
-<img src="./docs/iphone_screenshot.jpg" width="33%">
+<kbd><img src="./docs/iphone_screenshot.jpg" width="33%"></kbd>
 </div>
 
 
