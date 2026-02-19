@@ -888,6 +888,15 @@
         rotationInput.value = newAngle;
       }
 
+      // If moving the field (dx or dy is non-zero), update the base position
+      if ((dx !== 0 || dy !== 0) && !isNewGeneration) {
+        const degConversion = ftToDeg(1, baseLat);
+        baseLat = baseLat + dy * degConversion.lat;
+        baseLng = baseLng + dx * degConversion.lng;
+        // Save updated position
+        saveSettings();
+      }
+
       // Clear existing markers
       treeMarkers.clearLayers();
 
@@ -899,19 +908,9 @@
 
       // Calculate rotated positions
       treesRotated = trees.map(tree => {
-        // Apply translation if not a new generation
+        // Use original tree positions (not modified by movement)
         let xPos = tree.x;
         let yPos = tree.y;
-
-        if (!isNewGeneration && treesRotated.length > 0) {
-          // If we already have rotated trees, adjust from previous positions
-          xPos = tree.x + dx;
-          yPos = tree.y + dy;
-
-          // Update the base tree positions for future movements
-          tree.x = xPos;
-          tree.y = yPos;
-        }
 
         // Apply rotation
         const angleRad = newAngle * Math.PI / 180;
