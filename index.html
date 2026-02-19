@@ -852,13 +852,18 @@
       console.log(`Tree spacing: ${treeSpacing}, Row spacing: ${rowSpacing}`);
       console.log(`Rows: ${numRows}, Trees per row: ${treesPerRow}, Rotation: ${rotation}`);
 
-      // Generate base tree coordinates (before rotation)
+      // Generate base tree coordinates centered around (0,0)
       trees = [];
+      // Calculate field dimensions
+      const fieldWidth = (treesPerRow - 1) * treeSpacing;
+      const fieldHeight = (numRows - 1) * rowSpacing;
+      
+      // Generate trees centered at origin
       for (let row = 0; row < numRows; row++) {
         for (let col = 0; col < treesPerRow; col++) {
           trees.push({
-            x: col * treeSpacing,
-            y: row * rowSpacing
+            x: col * treeSpacing - fieldWidth / 2,
+            y: row * rowSpacing - fieldHeight / 2
           });
         }
       }
@@ -888,6 +893,15 @@
         rotationInput.value = newAngle;
       }
 
+      // Update base position when moving (to keep center at the right location)
+      if ((dx !== 0 || dy !== 0) && !isNewGeneration) {
+        const degConversion = ftToDeg(1, baseLat);
+        baseLat = baseLat + dy * degConversion.lat;
+        baseLng = baseLng + dx * degConversion.lng;
+        // Save updated position
+        saveSettings();
+      }
+
       // Clear existing markers
       treeMarkers.clearLayers();
 
@@ -897,28 +911,18 @@
       // Conversion factor based on latitude
       const degConversion = ftToDeg(1, baseLat);
 
-      // Calculate rotated positions
+      // Calculate rotated positions - trees are already centered at (0,0)
       treesRotated = trees.map(tree => {
-        // Apply translation if not a new generation
+        // Use original tree positions (centered coordinates)
         let xPos = tree.x;
         let yPos = tree.y;
 
-        if (!isNewGeneration && treesRotated.length > 0) {
-          // If we already have rotated trees, adjust from previous positions
-          xPos = tree.x + dx;
-          yPos = tree.y + dy;
-
-          // Update the base tree positions for future movements
-          tree.x = xPos;
-          tree.y = yPos;
-        }
-
-        // Apply rotation
+        // Apply rotation around center (0,0)
         const angleRad = newAngle * Math.PI / 180;
         const xRot = xPos * Math.cos(angleRad) - yPos * Math.sin(angleRad);
         const yRot = xPos * Math.sin(angleRad) + yPos * Math.cos(angleRad);
 
-        // Convert to lat/lng
+        // Convert to lat/lng (baseLat/baseLng is now the center)
         const lat = baseLat + yRot * degConversion.lat;
         const lng = baseLng + xRot * degConversion.lng;
 
