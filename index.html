@@ -384,7 +384,8 @@
           if (settings.rowSpacing) rowSpacingInput.value = settings.rowSpacing;
           if (settings.numRows) numRowsInput.value = settings.numRows;
           if (settings.treesPerRow) treesPerRowInput.value = settings.treesPerRow;
-          if (settings.rotation) rotationInput.value = settings.rotation;
+          // Always start rotation at 0 degrees
+          rotationInput.value = 0;
           if (settings.treeColor) treeColorSelect.value = settings.treeColor;
           if (settings.mapType) mapTypeSelect.value = settings.mapType;
           if (settings.followMode) followModeSelect.value = settings.followMode;
