@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#4CAF50">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Orchard Planner"
+  <meta name="apple-mobile-web-app-title" content="Orchard Planner">
 
   <!-- Leaflet CSS and JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -22,6 +22,9 @@
 
   <!-- External stylesheet for better organization and mobile responsiveness -->
   <link rel="stylesheet" href="styles.css" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -175,53 +178,8 @@
     const tileSize = isRetina ? 512 : 256;
     const zoomOffset = isRetina ? -1 : 0;
 
-
-    // Add satellite layer (default)
-    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-      maxZoom: 22,
-      maxNativeZoom: 19,
-      noWrap: true,
-      detectRetina: true,
-      // High-DPI specific options
-      reuseTiles: true,
-      tileSize: window.devicePixelRatio > 1 ? 512 : 256,
-      zoomOffset: window.devicePixelRatio > 1 ? -1 : 0,
-      // Performance options
-      keepBuffer: 16,
-      updateWhenIdle: false,
-      updateWhenZooming: false,
-      preferCanvas: true,
-      // iOS-specific options
-      bounceAtZoomLimits: false,
-      touchZoom: 'center',
-      // Enhanced zoom settings
-      fadeAnimation: false,
-      zoomAnimation: true,
-      zoomSnap: 0,
-      zoomDelta: 0.25,
-      // Prevent gray tiles
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-      // Enhanced caching
-      crossOrigin: true,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      tileSize: tileSize,
-      zoomOffset: zoomOffset,
-      // Add error handling for failed tiles
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-      // Add loading event handlers
-      on: {
-        tileerror: function (e) {
-          console.log('Tile failed to load:', e);
-          // Retry loading the tile
-          e.tile.src = e.url;
-        }
-      }
-    }).addTo(map);
-
-    // Create streets layer with same options
-    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Common tile layer options
+    const commonTileOptions = {
       maxZoom: 22,
       maxNativeZoom: 19,
       noWrap: true,
@@ -230,20 +188,37 @@
       updateWhenIdle: false,
       updateWhenZooming: false,
       preferCanvas: true,
-      // iOS-specific options
       bounceAtZoomLimits: false,
       touchZoom: 'center',
-      // Enhanced zoom settings
       fadeAnimation: false,
       zoomAnimation: true,
+      crossOrigin: true
+    };
+
+    // Add satellite layer (default)
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      ...commonTileOptions,
+      attribution: 'Tiles &copy; Esri',
+      tileSize: tileSize,
+      zoomOffset: zoomOffset,
+      zoomSnap: 0,
+      zoomDelta: 0.25,
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      on: {
+        tileerror: function (e) {
+          console.log('Tile failed to load:', e);
+          e.tile.src = e.url; // Retry loading the tile
+        }
+      }
+    }).addTo(map);
+
+    // Create streets layer
+    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      ...commonTileOptions,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      tileSize: 256,
       zoomSnap: 0.1,
       zoomDelta: 0.5,
-      // Tile management
-      updateInterval: 0,
-      tileSize: 256,
-      // Force continuous world wrapping
-      continuousWorld: true,
-      // Prevent gray tiles
       errorTileUrl: '',
       // Enhanced caching
       crossOrigin: true
@@ -391,6 +366,57 @@
 
     // Get location source select element
     const locationSource = document.getElementById('location_source');
+
+    // Load saved settings from localStorage
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem('orchardSettings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          if (settings.treeSpacing) treeSpacingInput.value = settings.treeSpacing;
+          if (settings.rowSpacing) rowSpacingInput.value = settings.rowSpacing;
+          if (settings.numRows) numRowsInput.value = settings.numRows;
+          if (settings.treesPerRow) treesPerRowInput.value = settings.treesPerRow;
+          if (settings.rotation) rotationInput.value = settings.rotation;
+          if (settings.treeColor) treeColorSelect.value = settings.treeColor;
+          if (settings.mapType) mapTypeSelect.value = settings.mapType;
+          if (settings.followMode) followModeSelect.value = settings.followMode;
+          if (settings.trackingInterval) trackingIntervalInput.value = settings.trackingInterval;
+          if (settings.baseLat && settings.baseLng) {
+            baseLat = settings.baseLat;
+            baseLng = settings.baseLng;
+            map.setView([baseLat, baseLng], 16);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+
+    // Save settings to localStorage
+    function saveSettings() {
+      try {
+        const settings = {
+          treeSpacing: parseFloat(treeSpacingInput.value),
+          rowSpacing: parseFloat(rowSpacingInput.value),
+          numRows: parseInt(numRowsInput.value),
+          treesPerRow: parseInt(treesPerRowInput.value),
+          rotation: parseFloat(rotationInput.value),
+          treeColor: treeColorSelect.value,
+          mapType: mapTypeSelect.value,
+          followMode: followModeSelect.value,
+          trackingInterval: parseInt(trackingIntervalInput.value),
+          baseLat: baseLat,
+          baseLng: baseLng
+        };
+        localStorage.setItem('orchardSettings', JSON.stringify(settings));
+      } catch (error) {
+        console.error('Error saving settings:', error);
+      }
+    }
+
+    // Load settings on page load
+    loadSettings();
 
 
     // Validate required elements
@@ -750,7 +776,10 @@
       return { lat: latDeg, lng: lngDeg };
     }
 
-    // Function to generate trees
+    /**
+     * Generate tree layout based on user input
+     * Validates inputs and creates circular markers for each tree position
+     */
     function generateTrees() {
       console.log("Generating trees...");
 
@@ -762,6 +791,31 @@
       const numRows = parseInt(numRowsInput.value);
       const treesPerRow = parseInt(treesPerRowInput.value);
       const rotation = parseFloat(rotationInput.value);
+
+      // Input validation with user feedback
+      if (isNaN(treeSpacing) || treeSpacing <= 0 || treeSpacing > 1000) {
+        alert('Please enter a valid tree spacing (1-1000 feet)');
+        treeSpacingInput.focus();
+        return;
+      }
+      if (isNaN(rowSpacing) || rowSpacing <= 0 || rowSpacing > 1000) {
+        alert('Please enter a valid row spacing (1-1000 feet)');
+        rowSpacingInput.focus();
+        return;
+      }
+      if (isNaN(numRows) || numRows <= 0 || numRows > 1000) {
+        alert('Please enter a valid number of rows (1-1000)');
+        numRowsInput.focus();
+        return;
+      }
+      if (isNaN(treesPerRow) || treesPerRow <= 0 || treesPerRow > 1000) {
+        alert('Please enter a valid number of trees per row (1-1000)');
+        treesPerRowInput.focus();
+        return;
+      }
+
+      // Save settings after successful validation
+      saveSettings();
 
       console.log(`Tree spacing: ${treeSpacing}, Row spacing: ${rowSpacing}`);
       console.log(`Rows: ${numRows}, Trees per row: ${treesPerRow}, Rotation: ${rotation}`);
