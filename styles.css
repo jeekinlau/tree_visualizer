@@ -1,0 +1,424 @@
+/* Base Styles */
+body {
+  padding: 0;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+#sidebar {
+  width: 300px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+#sidebar.collapsed {
+  transform: translateX(-100%);
+  width: 0;
+}
+
+#map {
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+}
+
+/* Form Elements */
+.input-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  margin-bottom: 5px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Touch-friendly buttons with minimum 44px touch target */
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 12px;
+  border: none;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  font-size: 14px;
+  min-height: 44px;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:active {
+  background-color: #3d8b40;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+  gap: 5px;
+}
+
+.action-buttons button {
+  flex: 1 1 calc(50% - 5px);
+  margin: 0;
+}
+
+/* Typography */
+h1 {
+  margin-top: 0;
+  font-size: 1.5em;
+}
+
+h4 {
+  margin-bottom: 5px;
+  margin-top: 10px;
+}
+
+/* Instructions */
+.instructions {
+  background-color: #f1f1f1;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.instructions ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.instructions li {
+  margin-bottom: 5px;
+}
+
+/* Location Buttons */
+#location_btn,
+#track_location_btn {
+  background-color: #2196F3;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+#stop_tracking_btn {
+  background-color: #f44336;
+  margin-bottom: 15px;
+  width: 100%;
+  display: none;
+}
+
+#location_btn:hover,
+#track_location_btn:hover {
+  background-color: #0b7dda;
+}
+
+#stop_tracking_btn:hover {
+  background-color: #d32f2f;
+}
+
+#location_status {
+  margin-bottom: 15px;
+  font-style: italic;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Toggle Sidebar */
+#toggle_sidebar {
+  position: absolute;
+  top: 10px;
+  left: 310px;
+  z-index: 1001;
+  background-color: #555;
+  color: white;
+  border-radius: 0 4px 4px 0;
+  padding: 10px 15px;
+  transition: left 0.3s ease;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  min-height: 44px;
+}
+
+#toggle_sidebar.collapsed {
+  left: 10px;
+}
+
+.toggle-icon {
+  display: inline-block;
+  width: 10px;
+  transition: transform 0.3s ease;
+}
+
+.toggle-icon.collapsed {
+  transform: rotate(180deg);
+}
+
+/* Location Badge */
+.location-badge {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px 14px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  z-index: 1000;
+  display: none;
+}
+
+.location-field {
+  margin-bottom: 5px;
+}
+
+.location-field span {
+  font-weight: bold;
+}
+
+/* GPS Status */
+.tracking-active {
+  background-color: #4CAF50 !important;
+  animation: pulse 2s infinite;
+}
+
+#location_source {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.gps-status {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.gps-status div {
+  margin-bottom: 4px;
+}
+
+.gps-status span {
+  font-weight: bold;
+}
+
+.gps-active {
+  color: #4CAF50;
+}
+
+.gps-inactive {
+  color: #f44336;
+}
+
+/* Leaflet Map Styles */
+.leaflet-tile {
+  visibility: inherit !important;
+  backface-visibility: hidden;
+}
+
+.leaflet-container {
+  background: transparent !important;
+}
+
+.leaflet-tile-container {
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.leaflet-safari .leaflet-tile {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .leaflet-container {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Mobile Responsiveness - Tablets and smaller */
+@media screen and (max-width: 768px) {
+  #sidebar {
+    width: 100%;
+    max-width: 320px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  }
+
+  #sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  #toggle_sidebar {
+    left: 0;
+    top: 10px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  #toggle_sidebar.collapsed {
+    left: 0;
+  }
+
+  h1 {
+    font-size: 1.3em;
+  }
+
+  .location-badge {
+    bottom: 10px;
+    right: 10px;
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+
+  .action-buttons button {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
+/* Mobile Responsiveness - Small phones */
+@media screen and (max-width: 480px) {
+  #sidebar {
+    max-width: 280px;
+    padding: 8px;
+  }
+
+  h1 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+  }
+
+  label {
+    font-size: 13px;
+  }
+
+  input,
+  select {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    padding: 10px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 12px;
+    min-height: 48px; /* Larger touch target for small screens */
+  }
+
+  .action-buttons button {
+    flex: 1 1 100%;
+    margin-bottom: 8px;
+  }
+
+  .location-badge {
+    font-size: 10px;
+    padding: 6px 8px;
+    bottom: 60px; /* Move up to avoid bottom navbar on mobile */
+  }
+
+  .instructions {
+    font-size: 13px;
+  }
+
+  .instructions ul {
+    padding-left: 15px;
+  }
+}
+
+/* Landscape mode on mobile */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  #sidebar {
+    width: 250px;
+    max-width: 250px;
+    font-size: 12px;
+  }
+
+  h1 {
+    font-size: 1.1em;
+  }
+
+  .input-group {
+    margin-bottom: 8px;
+  }
+
+  button {
+    padding: 6px 10px;
+    min-height: 36px;
+  }
+
+  .instructions {
+    display: none; /* Hide instructions in landscape to save space */
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  button,
+  input,
+  select {
+    border-width: 0.5px;
+  }
+}
+
+/* Print styles */
+@media print {
+  #sidebar,
+  #toggle_sidebar,
+  .location-badge {
+    display: none;
+  }
+
+  #map {
+    width: 100%;
+    height: 100vh;
+  }
+}

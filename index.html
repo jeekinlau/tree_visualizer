@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <title>Orchard Tree Spacing Visualizer</title>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="Interactive tool for visualizing and planning orchard tree layouts with GPS tracking">
+  <meta name="keywords" content="orchard, tree spacing, GPS, field planning, agriculture">
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Orchard Planner"
 
   <!-- Leaflet CSS and JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -14,254 +20,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-  <style>
-    body {
-      padding: 0;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    #container {
-      display: flex;
-      height: 100vh;
-      width: 100vw;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #sidebar {
-      width: 300px;
-      padding: 10px;
-      background-color: #f8f9fa;
-      overflow-y: auto;
-      transition: transform 0.3s ease;
-      position: relative;
-      z-index: 1000;
-      flex-shrink: 0;
-    }
-
-    #sidebar.collapsed {
-      transform: translateX(-100%);
-      width: 0;
-    }
-
-    #map {
-      flex-grow: 1;
-      height: 100%;
-      width: 100%;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      margin-bottom: 5px;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 8px 12px;
-      border: none;
-      cursor: pointer;
-      margin-right: 5px;
-      margin-bottom: 5px;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    .action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
-
-    .instructions {
-      background-color: #f1f1f1;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 1.5em;
-    }
-
-    h4 {
-      margin-bottom: 5px;
-    }
-
-    #location_btn,
-    #track_location_btn {
-      background-color: #2196F3;
-      margin-bottom: 8px;
-      width: 100%;
-    }
-
-    #stop_tracking_btn {
-      background-color: #f44336;
-      margin-bottom: 15px;
-      width: 100%;
-      display: none;
-    }
-
-    #location_btn:hover,
-    #track_location_btn:hover {
-      background-color: #0b7dda;
-    }
-
-    #stop_tracking_btn:hover {
-      background-color: #d32f2f;
-    }
-
-    #location_status {
-      margin-bottom: 15px;
-      font-style: italic;
-      color: #666;
-    }
-
-    #toggle_sidebar {
-      position: absolute;
-      top: 10px;
-      left: 310px;
-      z-index: 1001;
-      background-color: #555;
-      color: white;
-      border-radius: 0 4px 4px 0;
-      padding: 10px 15px;
-      transition: left 0.3s ease;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    }
-
-    #toggle_sidebar.collapsed {
-      left: 10px;
-    }
-
-    .toggle-icon {
-      display: inline-block;
-      width: 10px;
-      transition: transform 0.3s ease;
-    }
-
-    .toggle-icon.collapsed {
-      transform: rotate(180deg);
-    }
-
-    .location-badge {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(255, 255, 255, 0.8);
-      padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      font-size: 12px;
-      z-index: 1000;
-      display: none;
-    }
-
-    .location-field {
-      margin-bottom: 5px;
-    }
-
-    .location-field span {
-      font-weight: bold;
-    }
-
-    .tracking-active {
-      background-color: #4CAF50 !important;
-      animation: pulse 2s infinite;
-    }
-
-    #location_source {
-      margin-bottom: 15px;
-      width: 100%;
-    }
-
-    .gps-status {
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      padding: 8px;
-      margin-bottom: 15px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .gps-status div {
-      margin-bottom: 4px;
-    }
-
-    .gps-status span {
-      font-weight: bold;
-    }
-
-    .gps-active {
-      color: #4CAF50;
-    }
-
-    .gps-inactive {
-      color: #f44336;
-    }
-
-
-    .leaflet-tile {
-      visibility: inherit !important;
-      backface-visibility: hidden;
-    }
-
-    .leaflet-container {
-      background: transparent !important;
-    }
-
-    .leaflet-tile-container {
-      will-change: transform;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-    }
-
-    .leaflet-safari .leaflet-tile {
-      image-rendering: -webkit-optimize-contrast;
-    }
-
-    @supports (-webkit-touch-callout: none) {
-      .leaflet-container {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-      }
-    }
-
-
-
-    @keyframes pulse {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.7;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-  </style>
+  <!-- External stylesheet for better organization and mobile responsiveness -->
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
@@ -271,27 +31,27 @@
 
       <div class="input-group">
         <label for="tree_spacing">Tree spacing within rows (ft):</label>
-        <input type="number" id="tree_spacing" value="16" min="1">
+        <input type="number" id="tree_spacing" value="16" min="1" max="1000" step="0.5" required aria-label="Tree spacing within rows in feet">
       </div>
 
       <div class="input-group">
         <label for="row_spacing">Row spacing (ft):</label>
-        <input type="number" id="row_spacing" value="16" min="1">
+        <input type="number" id="row_spacing" value="16" min="1" max="1000" step="0.5" required aria-label="Row spacing in feet">
       </div>
 
       <div class="input-group">
         <label for="num_rows">Number of rows:</label>
-        <input type="number" id="num_rows" value="10" min="1">
+        <input type="number" id="num_rows" value="10" min="1" max="1000" step="1" required aria-label="Number of rows">
       </div>
 
       <div class="input-group">
         <label for="trees_per_row">Trees per row:</label>
-        <input type="number" id="trees_per_row" value="10" min="1">
+        <input type="number" id="trees_per_row" value="10" min="1" max="1000" step="1" required aria-label="Trees per row">
       </div>
 
       <div class="input-group">
         <label for="rotation">Field rotation (degrees):</label>
-        <input type="number" id="rotation" value="0" min="0" max="360">
+        <input type="number" id="rotation" value="0" min="0" max="360" step="1" aria-label="Field rotation in degrees">
       </div>
 
       <div class="input-group">
