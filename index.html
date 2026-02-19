@@ -127,6 +127,13 @@
           <li>Click points to measure</li>
           <li>Double-click to finish measurement</li>
         </ul>
+        <h4>Keyboard Shortcuts:</h4>
+        <ul>
+          <li><kbd>G</kbd> - Generate tree layout</li>
+          <li><kbd>Arrow Keys</kbd> - Move orchard</li>
+          <li><kbd>[</kbd> / <kbd>]</kbd> - Rotate</li>
+          <li><kbd>?</kbd> - Show all shortcuts</li>
+        </ul>
       </div>
       <button id="export_field" style="width: 100%; margin-top: 20px; background-color: #673AB7;">
         Export Field Design
@@ -714,22 +721,47 @@
       );
     }
 
-    // Function to handle location errors
+    /**
+     * Handle geolocation errors with user-friendly messages
+     * @param {GeolocationPositionError} error - The geolocation error object
+     */
     function handleLocationError(error) {
+      let errorMessage = 'Location error: ';
+      let userMessage = '';
+
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          locationStatus.textContent = "User denied the request for Geolocation";
+          errorMessage += 'User denied location access';
+          userMessage = 'Please allow location access in your browser settings to use GPS features.';
+          locationStatus.textContent = "User denied the request for Geolocation. " + userMessage;
+          // Show user-friendly alert for critical errors
+          setTimeout(() => {
+            alert(userMessage + '\n\nTo enable:\n• iOS: Settings → Safari → Location → While Using\n• Android: Settings → Apps → Browser → Permissions → Location');
+          }, 500);
           break;
         case error.POSITION_UNAVAILABLE:
-          locationStatus.textContent = "Location information is unavailable";
+          errorMessage += 'Location unavailable';
+          userMessage = 'Unable to retrieve your location. Please check your GPS/location services.';
+          locationStatus.textContent = "Location information is unavailable. " + userMessage;
           break;
         case error.TIMEOUT:
-          locationStatus.textContent = "The request to get user location timed out";
+          errorMessage += 'Location request timed out';
+          userMessage = 'Location request took too long. Please try again.';
+          locationStatus.textContent = "The request to get user location timed out. " + userMessage;
           break;
         case error.UNKNOWN_ERROR:
-          locationStatus.textContent = "An unknown error occurred";
+          errorMessage += 'Unknown error occurred';
+          userMessage = 'An unknown error occurred. Please try again.';
+          locationStatus.textContent = "An unknown error occurred. " + userMessage;
           break;
       }
+
+      console.error(errorMessage, error);
+      locationStatus.style.color = '#f44336';
+
+      // Reset GPS status display
+      document.getElementById('gps_signal').textContent = 'No Fix';
+      document.getElementById('gps_signal').className = 'gps-inactive';
     }
 
 
@@ -953,6 +985,83 @@
     moveRightBtn.addEventListener('click', function () {
       updateTreePositions(10, 0, 0);
     });
+
+    // Keyboard shortcuts for desktop users
+    document.addEventListener('keydown', function (e) {
+      // Only handle shortcuts when not typing in an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'g':
+          generateTrees();
+          e.preventDefault();
+          break;
+        case 'l':
+          getUserLocation();
+          e.preventDefault();
+          break;
+        case 't':
+          if (isTracking) {
+            stopLocationTracking();
+          } else {
+            startLocationTracking();
+          }
+          e.preventDefault();
+          break;
+        case 'arrowup':
+          updateTreePositions(0, 10, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowdown':
+          updateTreePositions(0, -10, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowleft':
+          updateTreePositions(-10, 0, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowright':
+          updateTreePositions(10, 0, 0, false);
+          e.preventDefault();
+          break;
+        case '[':
+          updateTreePositions(0, 0, -1, false);
+          e.preventDefault();
+          break;
+        case ']':
+          updateTreePositions(0, 0, 1, false);
+          e.preventDefault();
+          break;
+        case 's':
+          toggleSidebar();
+          e.preventDefault();
+          break;
+        case '?':
+          showKeyboardShortcuts();
+          e.preventDefault();
+          break;
+      }
+    });
+
+    /**
+     * Display keyboard shortcuts help dialog
+     */
+    function showKeyboardShortcuts() {
+      alert(`Keyboard Shortcuts:
+━━━━━━━━━━━━━━━━━━
+G - Generate tree layout
+L - Get current location
+T - Toggle GPS tracking
+S - Toggle sidebar
+
+Arrow Keys - Move orchard
+[ - Rotate counter-clockwise
+] - Rotate clockwise
+
+? - Show this help`);
+    }
 
     mapTypeSelect.addEventListener('change', function () {
       const mapType = mapTypeSelect.value;

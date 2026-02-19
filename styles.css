@@ -123,6 +123,17 @@ h4 {
   margin-bottom: 5px;
 }
 
+.instructions kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
 /* Location Buttons */
 #location_btn,
 #track_location_btn {
