@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <title>Orchard Tree Spacing Visualizer</title>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="Interactive tool for visualizing and planning orchard tree layouts with GPS tracking">
+  <meta name="keywords" content="orchard, tree spacing, GPS, field planning, agriculture">
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Orchard Planner">
 
   <!-- Leaflet CSS and JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -14,254 +20,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-  <style>
-    body {
-      padding: 0;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    #container {
-      display: flex;
-      height: 100vh;
-      width: 100vw;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #sidebar {
-      width: 300px;
-      padding: 10px;
-      background-color: #f8f9fa;
-      overflow-y: auto;
-      transition: transform 0.3s ease;
-      position: relative;
-      z-index: 1000;
-      flex-shrink: 0;
-    }
-
-    #sidebar.collapsed {
-      transform: translateX(-100%);
-      width: 0;
-    }
-
-    #map {
-      flex-grow: 1;
-      height: 100%;
-      width: 100%;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      margin-bottom: 5px;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 8px 12px;
-      border: none;
-      cursor: pointer;
-      margin-right: 5px;
-      margin-bottom: 5px;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    .action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
-
-    .instructions {
-      background-color: #f1f1f1;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 1.5em;
-    }
-
-    h4 {
-      margin-bottom: 5px;
-    }
-
-    #location_btn,
-    #track_location_btn {
-      background-color: #2196F3;
-      margin-bottom: 8px;
-      width: 100%;
-    }
-
-    #stop_tracking_btn {
-      background-color: #f44336;
-      margin-bottom: 15px;
-      width: 100%;
-      display: none;
-    }
-
-    #location_btn:hover,
-    #track_location_btn:hover {
-      background-color: #0b7dda;
-    }
-
-    #stop_tracking_btn:hover {
-      background-color: #d32f2f;
-    }
-
-    #location_status {
-      margin-bottom: 15px;
-      font-style: italic;
-      color: #666;
-    }
-
-    #toggle_sidebar {
-      position: absolute;
-      top: 10px;
-      left: 310px;
-      z-index: 1001;
-      background-color: #555;
-      color: white;
-      border-radius: 0 4px 4px 0;
-      padding: 10px 15px;
-      transition: left 0.3s ease;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    }
-
-    #toggle_sidebar.collapsed {
-      left: 10px;
-    }
-
-    .toggle-icon {
-      display: inline-block;
-      width: 10px;
-      transition: transform 0.3s ease;
-    }
-
-    .toggle-icon.collapsed {
-      transform: rotate(180deg);
-    }
-
-    .location-badge {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(255, 255, 255, 0.8);
-      padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      font-size: 12px;
-      z-index: 1000;
-      display: none;
-    }
-
-    .location-field {
-      margin-bottom: 5px;
-    }
-
-    .location-field span {
-      font-weight: bold;
-    }
-
-    .tracking-active {
-      background-color: #4CAF50 !important;
-      animation: pulse 2s infinite;
-    }
-
-    #location_source {
-      margin-bottom: 15px;
-      width: 100%;
-    }
-
-    .gps-status {
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      padding: 8px;
-      margin-bottom: 15px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .gps-status div {
-      margin-bottom: 4px;
-    }
-
-    .gps-status span {
-      font-weight: bold;
-    }
-
-    .gps-active {
-      color: #4CAF50;
-    }
-
-    .gps-inactive {
-      color: #f44336;
-    }
-
-
-    .leaflet-tile {
-      visibility: inherit !important;
-      backface-visibility: hidden;
-    }
-
-    .leaflet-container {
-      background: transparent !important;
-    }
-
-    .leaflet-tile-container {
-      will-change: transform;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-    }
-
-    .leaflet-safari .leaflet-tile {
-      image-rendering: -webkit-optimize-contrast;
-    }
-
-    @supports (-webkit-touch-callout: none) {
-      .leaflet-container {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-      }
-    }
-
-
-
-    @keyframes pulse {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.7;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-  </style>
+  <!-- External stylesheet for better organization and mobile responsiveness -->
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -271,27 +34,27 @@
 
       <div class="input-group">
         <label for="tree_spacing">Tree spacing within rows (ft):</label>
-        <input type="number" id="tree_spacing" value="16" min="1">
+        <input type="number" id="tree_spacing" value="16" min="1" max="1000" step="0.5" required aria-label="Tree spacing within rows in feet">
       </div>
 
       <div class="input-group">
         <label for="row_spacing">Row spacing (ft):</label>
-        <input type="number" id="row_spacing" value="16" min="1">
+        <input type="number" id="row_spacing" value="16" min="1" max="1000" step="0.5" required aria-label="Row spacing in feet">
       </div>
 
       <div class="input-group">
         <label for="num_rows">Number of rows:</label>
-        <input type="number" id="num_rows" value="10" min="1">
+        <input type="number" id="num_rows" value="10" min="1" max="1000" step="1" required aria-label="Number of rows">
       </div>
 
       <div class="input-group">
         <label for="trees_per_row">Trees per row:</label>
-        <input type="number" id="trees_per_row" value="10" min="1">
+        <input type="number" id="trees_per_row" value="10" min="1" max="1000" step="1" required aria-label="Trees per row">
       </div>
 
       <div class="input-group">
         <label for="rotation">Field rotation (degrees):</label>
-        <input type="number" id="rotation" value="0" min="0" max="360">
+        <input type="number" id="rotation" value="0" min="0" max="360" step="1" aria-label="Field rotation in degrees">
       </div>
 
       <div class="input-group">
@@ -364,6 +127,13 @@
           <li>Click points to measure</li>
           <li>Double-click to finish measurement</li>
         </ul>
+        <h4>Keyboard Shortcuts:</h4>
+        <ul>
+          <li><kbd>G</kbd> - Generate tree layout</li>
+          <li><kbd>Arrow Keys</kbd> - Move orchard</li>
+          <li><kbd>[</kbd> / <kbd>]</kbd> - Rotate</li>
+          <li><kbd>?</kbd> - Show all shortcuts</li>
+        </ul>
       </div>
       <button id="export_field" style="width: 100%; margin-top: 20px; background-color: #673AB7;">
         Export Field Design
@@ -415,53 +185,8 @@
     const tileSize = isRetina ? 512 : 256;
     const zoomOffset = isRetina ? -1 : 0;
 
-
-    // Add satellite layer (default)
-    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-      maxZoom: 22,
-      maxNativeZoom: 19,
-      noWrap: true,
-      detectRetina: true,
-      // High-DPI specific options
-      reuseTiles: true,
-      tileSize: window.devicePixelRatio > 1 ? 512 : 256,
-      zoomOffset: window.devicePixelRatio > 1 ? -1 : 0,
-      // Performance options
-      keepBuffer: 16,
-      updateWhenIdle: false,
-      updateWhenZooming: false,
-      preferCanvas: true,
-      // iOS-specific options
-      bounceAtZoomLimits: false,
-      touchZoom: 'center',
-      // Enhanced zoom settings
-      fadeAnimation: false,
-      zoomAnimation: true,
-      zoomSnap: 0,
-      zoomDelta: 0.25,
-      // Prevent gray tiles
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-      // Enhanced caching
-      crossOrigin: true,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      tileSize: tileSize,
-      zoomOffset: zoomOffset,
-      // Add error handling for failed tiles
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-      // Add loading event handlers
-      on: {
-        tileerror: function (e) {
-          console.log('Tile failed to load:', e);
-          // Retry loading the tile
-          e.tile.src = e.url;
-        }
-      }
-    }).addTo(map);
-
-    // Create streets layer with same options
-    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Common tile layer options
+    const commonTileOptions = {
       maxZoom: 22,
       maxNativeZoom: 19,
       noWrap: true,
@@ -470,20 +195,37 @@
       updateWhenIdle: false,
       updateWhenZooming: false,
       preferCanvas: true,
-      // iOS-specific options
       bounceAtZoomLimits: false,
       touchZoom: 'center',
-      // Enhanced zoom settings
       fadeAnimation: false,
       zoomAnimation: true,
+      crossOrigin: true
+    };
+
+    // Add satellite layer (default)
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      ...commonTileOptions,
+      attribution: 'Tiles &copy; Esri',
+      tileSize: tileSize,
+      zoomOffset: zoomOffset,
+      zoomSnap: 0,
+      zoomDelta: 0.25,
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      on: {
+        tileerror: function (e) {
+          console.log('Tile failed to load:', e);
+          e.tile.src = e.url; // Retry loading the tile
+        }
+      }
+    }).addTo(map);
+
+    // Create streets layer
+    let streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      ...commonTileOptions,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      tileSize: 256,
       zoomSnap: 0.1,
       zoomDelta: 0.5,
-      // Tile management
-      updateInterval: 0,
-      tileSize: 256,
-      // Force continuous world wrapping
-      continuousWorld: true,
-      // Prevent gray tiles
       errorTileUrl: '',
       // Enhanced caching
       crossOrigin: true
@@ -631,6 +373,58 @@
 
     // Get location source select element
     const locationSource = document.getElementById('location_source');
+
+    // Load saved settings from localStorage
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem('orchardSettings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          if (settings.treeSpacing) treeSpacingInput.value = settings.treeSpacing;
+          if (settings.rowSpacing) rowSpacingInput.value = settings.rowSpacing;
+          if (settings.numRows) numRowsInput.value = settings.numRows;
+          if (settings.treesPerRow) treesPerRowInput.value = settings.treesPerRow;
+          // Always start rotation at 0 degrees
+          rotationInput.value = 0;
+          if (settings.treeColor) treeColorSelect.value = settings.treeColor;
+          if (settings.mapType) mapTypeSelect.value = settings.mapType;
+          if (settings.followMode) followModeSelect.value = settings.followMode;
+          if (settings.trackingInterval) trackingIntervalInput.value = settings.trackingInterval;
+          if (settings.baseLat && settings.baseLng) {
+            baseLat = settings.baseLat;
+            baseLng = settings.baseLng;
+            map.setView([baseLat, baseLng], 16);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+
+    // Save settings to localStorage
+    function saveSettings() {
+      try {
+        const settings = {
+          treeSpacing: parseFloat(treeSpacingInput.value),
+          rowSpacing: parseFloat(rowSpacingInput.value),
+          numRows: parseInt(numRowsInput.value),
+          treesPerRow: parseInt(treesPerRowInput.value),
+          rotation: parseFloat(rotationInput.value),
+          treeColor: treeColorSelect.value,
+          mapType: mapTypeSelect.value,
+          followMode: followModeSelect.value,
+          trackingInterval: parseInt(trackingIntervalInput.value),
+          baseLat: baseLat,
+          baseLng: baseLng
+        };
+        localStorage.setItem('orchardSettings', JSON.stringify(settings));
+      } catch (error) {
+        console.error('Error saving settings:', error);
+      }
+    }
+
+    // Load settings on page load
+    loadSettings();
 
 
     // Validate required elements
@@ -928,22 +722,47 @@
       );
     }
 
-    // Function to handle location errors
+    /**
+     * Handle geolocation errors with user-friendly messages
+     * @param {GeolocationPositionError} error - The geolocation error object
+     */
     function handleLocationError(error) {
+      let errorMessage = 'Location error: ';
+      let userMessage = '';
+
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          locationStatus.textContent = "User denied the request for Geolocation";
+          errorMessage += 'User denied location access';
+          userMessage = 'Please allow location access in your browser settings to use GPS features.';
+          locationStatus.textContent = "User denied the request for Geolocation. " + userMessage;
+          // Show user-friendly alert for critical errors
+          setTimeout(() => {
+            alert(userMessage + '\n\nTo enable:\n• iOS: Settings → Safari → Location → While Using\n• Android: Settings → Apps → Browser → Permissions → Location');
+          }, 500);
           break;
         case error.POSITION_UNAVAILABLE:
-          locationStatus.textContent = "Location information is unavailable";
+          errorMessage += 'Location unavailable';
+          userMessage = 'Unable to retrieve your location. Please check your GPS/location services.';
+          locationStatus.textContent = "Location information is unavailable. " + userMessage;
           break;
         case error.TIMEOUT:
-          locationStatus.textContent = "The request to get user location timed out";
+          errorMessage += 'Location request timed out';
+          userMessage = 'Location request took too long. Please try again.';
+          locationStatus.textContent = "The request to get user location timed out. " + userMessage;
           break;
         case error.UNKNOWN_ERROR:
-          locationStatus.textContent = "An unknown error occurred";
+          errorMessage += 'Unknown error occurred';
+          userMessage = 'An unknown error occurred. Please try again.';
+          locationStatus.textContent = "An unknown error occurred. " + userMessage;
           break;
       }
+
+      console.error(errorMessage, error);
+      locationStatus.style.color = '#f44336';
+
+      // Reset GPS status display
+      document.getElementById('gps_signal').textContent = 'No Fix';
+      document.getElementById('gps_signal').className = 'gps-inactive';
     }
 
 
@@ -990,7 +809,10 @@
       return { lat: latDeg, lng: lngDeg };
     }
 
-    // Function to generate trees
+    /**
+     * Generate tree layout based on user input
+     * Validates inputs and creates circular markers for each tree position
+     */
     function generateTrees() {
       console.log("Generating trees...");
 
@@ -1003,16 +825,46 @@
       const treesPerRow = parseInt(treesPerRowInput.value);
       const rotation = parseFloat(rotationInput.value);
 
+      // Input validation with user feedback
+      if (isNaN(treeSpacing) || treeSpacing <= 0 || treeSpacing > 1000) {
+        alert('Please enter a valid tree spacing (1-1000 feet)');
+        treeSpacingInput.focus();
+        return;
+      }
+      if (isNaN(rowSpacing) || rowSpacing <= 0 || rowSpacing > 1000) {
+        alert('Please enter a valid row spacing (1-1000 feet)');
+        rowSpacingInput.focus();
+        return;
+      }
+      if (isNaN(numRows) || numRows <= 0 || numRows > 1000) {
+        alert('Please enter a valid number of rows (1-1000)');
+        numRowsInput.focus();
+        return;
+      }
+      if (isNaN(treesPerRow) || treesPerRow <= 0 || treesPerRow > 1000) {
+        alert('Please enter a valid number of trees per row (1-1000)');
+        treesPerRowInput.focus();
+        return;
+      }
+
+      // Save settings after successful validation
+      saveSettings();
+
       console.log(`Tree spacing: ${treeSpacing}, Row spacing: ${rowSpacing}`);
       console.log(`Rows: ${numRows}, Trees per row: ${treesPerRow}, Rotation: ${rotation}`);
 
-      // Generate base tree coordinates (before rotation)
+      // Generate base tree coordinates centered around (0,0)
       trees = [];
+      // Calculate field dimensions
+      const fieldWidth = (treesPerRow - 1) * treeSpacing;
+      const fieldHeight = (numRows - 1) * rowSpacing;
+      
+      // Generate trees centered at origin
       for (let row = 0; row < numRows; row++) {
         for (let col = 0; col < treesPerRow; col++) {
           trees.push({
-            x: col * treeSpacing,
-            y: row * rowSpacing
+            x: col * treeSpacing - fieldWidth / 2,
+            y: row * rowSpacing - fieldHeight / 2
           });
         }
       }
@@ -1042,6 +894,15 @@
         rotationInput.value = newAngle;
       }
 
+      // Update base position when moving (to keep center at the right location)
+      if ((dx !== 0 || dy !== 0) && !isNewGeneration) {
+        const degConversion = ftToDeg(1, baseLat);
+        baseLat = baseLat + dy * degConversion.lat;
+        baseLng = baseLng + dx * degConversion.lng;
+        // Save updated position
+        saveSettings();
+      }
+
       // Clear existing markers
       treeMarkers.clearLayers();
 
@@ -1051,28 +912,18 @@
       // Conversion factor based on latitude
       const degConversion = ftToDeg(1, baseLat);
 
-      // Calculate rotated positions
+      // Calculate rotated positions - trees are already centered at (0,0)
       treesRotated = trees.map(tree => {
-        // Apply translation if not a new generation
+        // Use original tree positions (centered coordinates)
         let xPos = tree.x;
         let yPos = tree.y;
 
-        if (!isNewGeneration && treesRotated.length > 0) {
-          // If we already have rotated trees, adjust from previous positions
-          xPos = tree.x + dx;
-          yPos = tree.y + dy;
-
-          // Update the base tree positions for future movements
-          tree.x = xPos;
-          tree.y = yPos;
-        }
-
-        // Apply rotation
+        // Apply rotation around center (0,0)
         const angleRad = newAngle * Math.PI / 180;
         const xRot = xPos * Math.cos(angleRad) - yPos * Math.sin(angleRad);
         const yRot = xPos * Math.sin(angleRad) + yPos * Math.cos(angleRad);
 
-        // Convert to lat/lng
+        // Convert to lat/lng (baseLat/baseLng is now the center)
         const lat = baseLat + yRot * degConversion.lat;
         const lng = baseLng + xRot * degConversion.lng;
 
@@ -1139,6 +990,83 @@
     moveRightBtn.addEventListener('click', function () {
       updateTreePositions(10, 0, 0);
     });
+
+    // Keyboard shortcuts for desktop users
+    document.addEventListener('keydown', function (e) {
+      // Only handle shortcuts when not typing in an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'g':
+          generateTrees();
+          e.preventDefault();
+          break;
+        case 'l':
+          getUserLocation();
+          e.preventDefault();
+          break;
+        case 't':
+          if (isTracking) {
+            stopLocationTracking();
+          } else {
+            startLocationTracking();
+          }
+          e.preventDefault();
+          break;
+        case 'arrowup':
+          updateTreePositions(0, 10, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowdown':
+          updateTreePositions(0, -10, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowleft':
+          updateTreePositions(-10, 0, 0, false);
+          e.preventDefault();
+          break;
+        case 'arrowright':
+          updateTreePositions(10, 0, 0, false);
+          e.preventDefault();
+          break;
+        case '[':
+          updateTreePositions(0, 0, -1, false);
+          e.preventDefault();
+          break;
+        case ']':
+          updateTreePositions(0, 0, 1, false);
+          e.preventDefault();
+          break;
+        case 's':
+          toggleSidebar();
+          e.preventDefault();
+          break;
+        case '?':
+          showKeyboardShortcuts();
+          e.preventDefault();
+          break;
+      }
+    });
+
+    /**
+     * Display keyboard shortcuts help dialog
+     */
+    function showKeyboardShortcuts() {
+      alert(`Keyboard Shortcuts:
+━━━━━━━━━━━━━━━━━━
+G - Generate tree layout
+L - Get current location
+T - Toggle GPS tracking
+S - Toggle sidebar
+
+Arrow Keys - Move orchard
+[ - Rotate counter-clockwise
+] - Rotate clockwise
+
+? - Show this help`);
+    }
 
     mapTypeSelect.addEventListener('change', function () {
       const mapType = mapTypeSelect.value;

@@ -1,0 +1,20 @@
+{
+  "name": "Orchard Tree Spacing Visualizer",
+  "short_name": "Orchard Planner",
+  "description": "Interactive tool for visualizing and planning orchard tree layouts with GPS tracking",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#4CAF50",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%234CAF50'/><path d='M50 20 L50 45 M35 35 L65 35 M35 50 L65 50 M35 65 L65 65' stroke='white' stroke-width='3'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "agriculture"],
+  "screenshots": []
+}
